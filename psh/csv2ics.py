@@ -63,6 +63,18 @@ def deal_event(a_event_arr, a_tzinfo):
 
 	return event
 
+def process_dayofweek_mask(recurrence_dayofweek, week_day):
+	list_of_days = []
+	for i in sorted(week_day,cmp=lambda x,y: cmp(int(x), int(y)), reverse=True):
+		logger.debug('i:'+i)
+		logger.debug('recurrence_dayofweek:%d' % (recurrence_dayofweek))
+		if recurrence_dayofweek >= int(i):
+			list_of_days.append(week_day[i])
+			recurrence_dayofweek = recurrence_dayofweek - int(i)
+	return list_of_days
+			
+
+
 def process_recurrence(recurrence_line, l_event, l_line_number):
 	logger.debug('process_recurrence')
 	line_len=len(recurrence_line)
@@ -73,24 +85,36 @@ def process_recurrence(recurrence_line, l_event, l_line_number):
 		recurrence_interval = recurrence_arr[10].strip('"')
 		recurrence_instance = recurrence_arr[9].strip('"')
 		recurrence_dayofweek = recurrence_arr[5].strip('"')
+		recurrence_dayofmonth = recurrence_arr[4].strip('"')
 		logger.debug('recurrence_type:'+recurrence_type)
 		logger.debug('recurrence_interval:'+recurrence_interval)
 		logger.debug('recurrence_dayofweek:'+recurrence_dayofweek)
 
 		week_day = {'1': 'SU','2': 'MO','4': 'TU','8': 'WE','16': 'TH','32': 'FR','64': 'SA',}
+		weekday_list = process_dayofweek_mask(int(recurrence_dayofweek), week_day)
 		# week_day = {'1': '0','2': '1','4': '2','8': '3','16': '4','5': '5','64': '6',}
 
 		if recurrence_type == '0':
 			l_event.add('rrule', {'freq': 'daily',})
 		elif recurrence_type == '1':
 			if  recurrence_interval == '1':
-				logger.debug('week_day:'+week_day[recurrence_dayofweek])
-				l_event.add('rrule', {'freq': 'weekly', 'weekday': week_day[recurrence_dayofweek], })
+				logger.debug('week_day:'+','.join(weekday_list))
+				l_event.add('rrule', {'freq': 'weekly', 'byday': weekday_list, })
 			else:
-				l_event.add('rrule', {'freq': 'weekly', 'interval': recurrence_arr[10].strip('"'), })
+				l_event.add('rrule', {'freq': 'weekly', 'interval': recurrence_arr[10].strip('"'), 'byday': weekday_list, })
+		elif recurrence_type == '2':
+			if  recurrence_interval == '1':
+				logger.debug('week_day:'+','.join(weekday_list))
+				l_event.add('rrule', {'freq': 'monthly', 'bymonthday': recurrence_dayofmonth, })
+			else:
+				l_event.add('rrule', {'freq': 'monthly', 'interval': recurrence_arr[10].strip('"'), 'bymonthday': recurrence_dayofmonth, })
 		elif recurrence_type == '3':
 			logger.debug('rrule added')
-			l_event.add('rrule', {'freq': 'monthly', 'interval': recurrence_interval, })
+			if  recurrence_interval == '1':
+				logger.debug('week_day:'+','.join(weekday_list))
+				l_event.add('rrule', {'freq': 'monthly', 'bymonthday': recurrence_dayofmonth, })
+			else:
+				l_event.add('rrule', {'freq': 'monthly', 'interval': recurrence_arr[10].strip('"'), 'bymonthday': recurrence_dayofmonth, })
 		elif recurrence_type == '4':
 			logger.debug('rrule added')
 		elif recurrence_type == '5':
@@ -155,6 +179,7 @@ for a_item_file in files_items_arr:
 	item_number = file_name.split('.')[3]
 	l_event = Event()
 
+	logger.debug('file handled:' + a_item_file)
 	f_item = open(a_item_file, 'r')
 	line_number=0
 	for outlook_line in f_item:
