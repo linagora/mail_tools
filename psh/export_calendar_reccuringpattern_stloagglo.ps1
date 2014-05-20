@@ -14,7 +14,7 @@ foreach ($room in $rooms)
 #//		Add-MailboxPermission -Identity $room -User $currentUser -Accessrights Fullaccess -InheritanceType all -Confirm:$False > $null
 #//		$homeServer = Get-Mailbox $room | select ServerName
 #//		$newPRF = ".\" + $room + ".prf"
-		$exportFileRecurrences = "..\output\" + $room + "_withrecurrences.csv"
+		$exportFileRecurrences = "..\output\" + $room + ".csv"
 		$exportFileWithoutRecurrences = "..\output\" + $room + "_withoutrecurrences.csv"
 
 #//Create a new PRF file for the current Room mailbox
@@ -37,12 +37,34 @@ foreach ($room in $rooms)
 		# Export with recurrences
 		$calItems = $olSession.GetDefaultFolder($calFolder).Items
 		$calItems.Sort("[Start]")
-		$calItems.IncludeRecurrences = $true
+		# $calItems.IncludeRecurrences = $true
+		$calItems.IncludeRecurrences = $false
 		$dateRange = "[End] >= '{0}' AND [Start] <= '{1}'" -f $startTime.ToString("g"), $endTime.ToString("g")
 		$calExport = $calItems.Restrict($dateRange)
 
-		Write-Host "..exporting Calendar including recurrences to CSV"
-		$calExport | Export-Csv $exportFileRecurrences -encoding "unicode"
+		$l_nb_item = 0
+
+		Write-Host "..exporting Calendar recurring patterns to CSV"
+		foreach ($Contact in $calExport) {
+			# $Contact.Move($tempFolder) | foreach-object {Write-Progress "Backup unique items to temp folder..." $_.FullName; $_.FullName} | Out-Null
+			$Contact | Export-Csv $exportFileRecurrences".item."$l_nb_item -encoding "unicode"
+			# $Contact.Parent | Export-Csv $exportFileRecurrences".parent."$l_nb_item -encoding "unicode"
+			$olRecurrences = $Contact.GetRecurrencePattern()
+			$l_nb_reccurences = 0
+			foreach($rec in $olRecurrences)
+			{
+				$l_nb_exception = 0
+				$rec | Export-Csv $exportFileRecurrences".recurrence."$l_nb_reccurences"."$l_nb_item -encoding "unicode"
+				foreach($a_exception in $rec.Exceptions)
+				{
+					$a_exception | Export-Csv $exportFileRecurrences".exception."$l_nb_exception"."$l_nb_reccurences"."$l_nb_item -encoding "unicode"
+					$l_nb_exception = $l_nb_exception + 1;
+				}
+				$l_nb_reccurences = $l_nb_reccurences + 1;
+			}
+			$l_nb_item = $l_nb_item + 1
+		}
+		# $calExport | Export-Csv $exportFileRecurrences -encoding "unicode"
 
 		# Export without recurrences
 #		$calItemsW = $olSession.GetDefaultFolder($calFolder).Items
