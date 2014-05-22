@@ -72,8 +72,43 @@ def process_dayofweek_mask(recurrence_dayofweek, week_day):
 			list_of_days.append(week_day[i])
 			recurrence_dayofweek = recurrence_dayofweek - int(i)
 	return list_of_days
-			
 
+def process_appointment(a_appointment_line, a_event, a_line_appointment_number, a_moved_event_list, a_tzinfo):
+	if (a_line_appointment_number>2) and (len(a_appointment_line) > 1):
+		a_appointment_arr = a_appointment_line.split(',')
+		a_moved_event = deal_event(a_appointment_arr, a_tzinfo)
+		a_moved_event.add('recurrence-id', l_event.get('dtstart'))
+		a_moved_event_list.append(a_moved_event)
+
+def create_moved_event(l_event, a_recurrence_number, a_item_number, a_tzinfo):
+	a_moved_event_list = []
+	
+	files_appointement_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.appointmentitem.*.' + recurrence_number + '.' + item_number + '.iconv')
+	for file_appointment in files_appointement_arr:
+		f_appointment = open(file_appointment, 'r')
+		line_appointment_number=0
+		for appointment_line in f_appointment:
+			line_appointment_number=line_appointment_number+1
+			process_appointment(appointment_line, l_event, line_appointment_number, a_moved_event_list, a_tzinfo)
+		f_appointment.close()
+	return a_moved_event_list[0]
+
+def process_exception(exception_line, l_event, l_line_number, l_tzinfo, a_date_list_exc, moved_events_list, a_recurrence_number, a_item_number):
+	logger.debug('process_exception')
+	logger.debug(exception_line)
+	line_len=len(exception_line)
+
+	if (l_line_number > 2) and (line_len > 1):
+		exception_arr = exception_line.split(',')
+		is_deleted = exception_arr[5].strip('"')
+		a_day, a_month, a_year, a_hour, a_minute, a_second = split_outlook_date(exception_arr[6])
+		if  (is_deleted == "True"):
+			logger.debug('is_deleted:'+exception_line)
+			a_date_list_exc.append(datetime(a_year, a_month, a_day, a_hour, a_minute, a_second, tzinfo=pytz.timezone(l_tzinfo)))
+		else:
+			logger.debug('is_not_deleted:'+exception_line)
+			a_moved_event = create_moved_event(l_event, a_recurrence_number, a_item_number, l_tzinfo)
+			moved_events_list.append(a_moved_event)
 
 def process_recurrence(recurrence_line, l_event, l_line_number):
 	logger.debug('process_recurrence')
@@ -182,6 +217,7 @@ for a_item_file in files_items_arr:
 	file_name = basename(a_item_file)
 	item_number = file_name.split('.')[3]
 	l_event = Event()
+	moved_events = []
 
 	logger.debug('file handled:' + a_item_file)
 	f_item = open(a_item_file, 'r')
@@ -189,34 +225,45 @@ for a_item_file in files_items_arr:
 	for outlook_line in f_item:
 		line_number=line_number+1
 		l_event = process_item(outlook_line, l_event, line_number)
-
-		files_recurrences_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.recurrence.*.' + item_number + '.iconv')
-		# print file_name
-		# print item_number
-
-		for a_recurrence_file in files_recurrences_arr:
-			# print a_recurrence_file
-			file_rec_name = basename(a_recurrence_file)
-			recurrence_number = file_rec_name.split('.')[3]
-
-			f_recurrence = open(a_recurrence_file, 'r')
-			line_rec_number=0
-			for recurrence_line in f_recurrence:
-				line_rec_number=line_rec_number+1
-				process_recurrence(recurrence_line, l_event, line_rec_number)
-				files_exceptions_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.exception.*.' + recurrence_number + '.' + item_number + '.iconv')
-				for a_exception_file in files_exceptions_arr:
-					print a_exception_file
-			f_recurrence.close()
-
 	f_item.close()
+
+	files_recurrences_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.recurrence.*.' + item_number + '.iconv')
+	# print file_name
+	# print item_number
+
+	for a_recurrence_file in files_recurrences_arr:
+		# print a_recurrence_file
+		file_rec_name = basename(a_recurrence_file)
+		recurrence_number = file_rec_name.split('.')[3]
+
+		f_recurrence = open(a_recurrence_file, 'r')
+		line_rec_number=0
+		for recurrence_line in f_recurrence:
+			line_rec_number=line_rec_number+1
+			process_recurrence(recurrence_line, l_event, line_rec_number)
+		f_recurrence.close()
+
+		files_exceptions_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.exception.*.' + recurrence_number + '.' + item_number + '.iconv')
+		a_date_list_exc = []
+		for a_exception_file in files_exceptions_arr:
+			logger.debug(a_exception_file)
+
+			f_exception = open(a_exception_file, 'r')
+			line_exception_number=0
+			for exception_line in f_exception:
+				line_exception_number=line_exception_number+1
+				process_exception(exception_line, l_event, line_exception_number, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number)
+			f_exception.close()
+
+		if len(a_date_list_exc) != 0:
+			l_event.add('exdate', a_date_list_exc)
+
 	cal.add_component(l_event)
 
-
-
+	for a_event in moved_events:
+		cal.add_component(a_event)
 
 import tempfile, os
-# directory = tempfile.mkdtemp()
 f = open(os.path.join('/home/stlo_agglo/mail_tools/psh', 'example.ics'), 'wb')
 f.write(cal.to_ical())
 f.close()
