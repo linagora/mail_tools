@@ -114,9 +114,9 @@ def process_recurrence(recurrence_line, l_event, l_line_number):
 			logger.debug('rrule added')
 			if  recurrence_interval == '1':
 				logger.debug('week_day:'+','.join(weekday_list))
-				l_event.add('rrule', {'freq': 'monthly', 'byday': instance_dict[recurrence_instance] + weekday_list[0], })
+				l_event.add('rrule', {'freq': 'monthly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], })
 			else:
-				l_event.add('rrule', {'freq': 'monthly', 'interval': recurrence_arr[10].strip('"'), 'byday': instance_dict[recurrence_instance] + weekday_list[0], })
+				l_event.add('rrule', {'freq': 'monthly', 'interval': recurrence_arr[10].strip('"'), 'wkst': instance_dict[recurrence_instance] + weekday_list[0], })
 		elif recurrence_type == '4':
 			logger.debug('rrule added')
 		elif recurrence_type == '5':
@@ -124,11 +124,7 @@ def process_recurrence(recurrence_line, l_event, l_line_number):
 			l_event.add('rrule', {'freq': 'yearly', 'bymonth': recurrence_monthofyear, 'bymonthday': recurrence_dayofmonth, })
 		elif recurrence_type == '6':
 			logger.debug('rrule added')
-			if  recurrence_interval == '1':
-				logger.debug('week_day:'+','.join(weekday_list))
-				l_event.add('rrule', {'freq': 'yearly', 'byday': instance_dict[recurrence_instance] + weekday_list[0], })
-			else:
-				l_event.add('rrule', {'freq': 'yearly', 'interval': recurrence_arr[10].strip('"'), 'byday': instance_dict[recurrence_instance] + weekday_list[0], })
+			l_event.add('rrule', {'freq': 'yearly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], 'bymonth': recurrence_monthofyear})
 
 def process_item(outlook_line, l_event, l_line_number):
 	logger.debug('process_item')
