@@ -48,6 +48,7 @@ foreach ($room in $rooms)
 		foreach ($Contact in $calExport) {
 			# $Contact.Move($tempFolder) | foreach-object {Write-Progress "Backup unique items to temp folder..." $_.FullName; $_.FullName} | Out-Null
 			$Contact | Export-Csv $exportFileRecurrences".item."$l_nb_item -encoding "unicode"
+			$Contact.Recipients | Export-Csv $exportFileRecurrences".itemrecipients."$l_nb_item -encoding "unicode"
 			# $Contact.Parent | Export-Csv $exportFileRecurrences".parent."$l_nb_item -encoding "unicode"
 			$olRecurrences = $Contact.GetRecurrencePattern()
 			$l_nb_reccurences = 0
@@ -59,6 +60,11 @@ foreach ($room in $rooms)
 				{
 					$a_exception | Export-Csv $exportFileRecurrences".exception."$l_nb_exception"."$l_nb_reccurences"."$l_nb_item -encoding "unicode"
 					$l_nb_exception = $l_nb_exception + 1;
+					$appointment_item = $a_exception.AppointmentItem
+					if($appointment_item)
+					{
+						$appointment_item | Export-Csv $exportFileRecurrences".appointmentitem."$l_nb_exception"."$l_nb_reccurences"."$l_nb_item -encoding "unicode"
+					}
 				}
 				$l_nb_reccurences = $l_nb_reccurences + 1;
 			}
