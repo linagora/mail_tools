@@ -1,13 +1,30 @@
 #!/bin/bash
 
-# iconv -f UTF-16 -t UTF-8 profil_agglolo_1_withrecurrences.csv > profil_agglolo_1_withrecurrences.csv.iconv
+profil=$1
 
-cd ../output
+rm ../output/${profil}/*.iconv
+cd ../output/${profil}
 
 for i in `ls`
 do
-	iconv -f UTF-16 -t UTF-8 $i > $i.iconv
+	iconv -f UTF-16 -t UTF-8 $i | sed -e 's///' -ne '
+/^".*"$/ {
+p
+}
+/^".*[^"]$/ {
+h
+}
+/^[^"].*[^"]$/ {
+H
+}
+/^[^"].*"$/ {
+H
+x
+s/\n/\\n/g
+p
+}' > $i.iconv
 done
 
-python csv2ics.py
+cd -
+python csv2ics.py > ~/log.txt 2>&1
 

@@ -243,96 +243,96 @@ class ExportToCsv:
 			a_recipient_dict[l_attendee_cn] = [ recipient_mail, recipient_arr[10].strip('"') ,]
 
 # main
-FORMAT = '%(asctime)-15s %(message)s'
-logging.basicConfig(format=FORMAT)
-logger = logging.getLogger('tcpserver')
-logger.setLevel('DEBUG')
-logger.warning('Protocol problem: %s', 'connection reset')
+if __name__ == '__main__':
+	FORMAT = '%(asctime)-15s %(message)s'
+	logging.basicConfig(format=FORMAT)
+	logger = logging.getLogger('tcpserver')
+	logger.setLevel('DEBUG')
 
-cal = Calendar()
-cal.add('prodid', '-//My calendar product//mxm.dk//')
-cal.add('version', '2.0')
+	cal = Calendar()
+	cal.add('prodid', '-//My calendar product//mxm.dk//')
+	cal.add('version', '2.0')
 
-profile_to_process='profil_agglolo_1'
-data_directory='../output'
-line_number = 0
-l_tzinfo="Europe/Paris"
-a_export_to_csv = ExportToCsv()
+	profile_to_process='profil_agglolo_1'
+	data_directory='../output/'+profile_to_process
+	line_number = 0
+	l_tzinfo="Europe/Paris"
+	a_export_to_csv = ExportToCsv()
 
-import glob
-from os.path import basename
+	import glob
+	from os.path import basename
 
-files_items_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.item.*.iconv')
+	files_items_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.item.*.iconv')
 
-for a_item_file in files_items_arr:
-	try:
-		file_name = basename(a_item_file)
-		item_number = file_name.split('.')[3]
-		l_event = Event()
-		moved_events = []
-		recipient_dict = dict()
+	for a_item_file in files_items_arr:
+		try:
+			file_name = basename(a_item_file)
+			item_number = file_name.split('.')[3]
+			l_event = Event()
+			moved_events = []
+			recipient_dict = dict()
 
-		logger.debug('path to recipients:'+data_directory + '/' + profile_to_process + '.csv.itemrecipients.' + item_number + '.iconv')
-		files_recipients_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.itemrecipients.' + item_number + '.iconv')
-		for a_recipient_file in files_recipients_arr:
-			logger.debug('recipients handled:' + a_recipient_file)
-			f_recipient = open(a_recipient_file, 'r')
-			line_recipient_number=0
-			for recipient_line in f_recipient:
-				line_recipient_number=line_recipient_number+1
-				a_export_to_csv.process_recipient(recipient_line, line_recipient_number, recipient_dict)
-			if len(recipient_dict) == 0:
-				raise EmailEmpty("No recipients found in "+a_recipient_file)
+			logger.debug('path to recipients:'+data_directory + '/' + profile_to_process + '.csv.itemrecipients.' + item_number + '.iconv')
+			files_recipients_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.itemrecipients.' + item_number + '.iconv')
+			for a_recipient_file in files_recipients_arr:
+				logger.debug('recipients handled:' + a_recipient_file)
+				f_recipient = open(a_recipient_file, 'r')
+				line_recipient_number=0
+				for recipient_line in f_recipient:
+					line_recipient_number=line_recipient_number+1
+					a_export_to_csv.process_recipient(recipient_line, line_recipient_number, recipient_dict)
+				if len(recipient_dict) == 0:
+					raise EmailEmpty("No recipients found in "+a_recipient_file)
 
-		logger.debug('file handled:' + a_item_file)
-		logger.debug('recipient_dict keys1:<'+'#'.join(recipient_dict.keys())+'>')
-		f_item = open(a_item_file, 'r')
-		line_number=0
-		for outlook_line in f_item:
-			line_number=line_number+1
-			l_event = a_export_to_csv.process_item(outlook_line, l_event, line_number, recipient_dict)
-		f_item.close()
+			logger.debug('file handled:' + a_item_file)
+			logger.debug('recipient_dict keys1:<'+'#'.join(recipient_dict.keys())+'>')
+			f_item = open(a_item_file, 'r')
+			line_number=0
+			for outlook_line in f_item:
+				line_number=line_number+1
+				l_event = a_export_to_csv.process_item(outlook_line, l_event, line_number, recipient_dict)
+			f_item.close()
 
-		files_recurrences_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.recurrence.*.' + item_number + '.iconv')
-		for a_recurrence_file in files_recurrences_arr:
-			# print a_recurrence_file
-			file_rec_name = basename(a_recurrence_file)
-			recurrence_number = file_rec_name.split('.')[3]
+			files_recurrences_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.recurrence.*.' + item_number + '.iconv')
+			for a_recurrence_file in files_recurrences_arr:
+				# print a_recurrence_file
+				file_rec_name = basename(a_recurrence_file)
+				recurrence_number = file_rec_name.split('.')[3]
 
-			f_recurrence = open(a_recurrence_file, 'r')
-			line_rec_number=0
-			for recurrence_line in f_recurrence:
-				line_rec_number=line_rec_number+1
-				a_export_to_csv.process_recurrence(recurrence_line, l_event, line_rec_number)
-			f_recurrence.close()
+				f_recurrence = open(a_recurrence_file, 'r')
+				line_rec_number=0
+				for recurrence_line in f_recurrence:
+					line_rec_number=line_rec_number+1
+					a_export_to_csv.process_recurrence(recurrence_line, l_event, line_rec_number)
+				f_recurrence.close()
 
-			files_exceptions_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.exception.*.' + recurrence_number + '.' + item_number + '.iconv')
-			a_date_list_exc = []
-			for a_exception_file in files_exceptions_arr:
-				logger.debug(a_exception_file)
+				files_exceptions_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.exception.*.' + recurrence_number + '.' + item_number + '.iconv')
+				a_date_list_exc = []
+				for a_exception_file in files_exceptions_arr:
+					logger.debug(a_exception_file)
 
-				f_exception = open(a_exception_file, 'r')
-				line_exception_number=0
-				for exception_line in f_exception:
-					line_exception_number=line_exception_number+1
-					a_export_to_csv.process_exception(exception_line, l_event, line_exception_number, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number, recipient_dict)
-				f_exception.close()
+					f_exception = open(a_exception_file, 'r')
+					line_exception_number=0
+					for exception_line in f_exception:
+						line_exception_number=line_exception_number+1
+						a_export_to_csv.process_exception(exception_line, l_event, line_exception_number, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number, recipient_dict)
+					f_exception.close()
 
-			if len(a_date_list_exc) != 0:
-				l_event.add('exdate', a_date_list_exc)
+				if len(a_date_list_exc) != 0:
+					l_event.add('exdate', a_date_list_exc)
 
-		cal.add_component(l_event)
+			cal.add_component(l_event)
 
-		for a_event in moved_events:
-			cal.add_component(a_event)
+			for a_event in moved_events:
+				cal.add_component(a_event)
 
-	except EmailEmpty as e:
-		logger.error('Exception caught')
+		except EmailEmpty as e:
+			logger.error('Exception caught')
 
-	except NameEmpty as e:
-		logger.error('Exception caught')
+		except NameEmpty as e:
+			logger.error('Exception caught')
 
-f = open(os.path.join('/home/stlo_agglo/mail_tools/psh', 'example.ics'), 'wb')
-f.write(cal.to_ical())
-f.close()
+	f = open(os.path.join('/home/stlo_agglo/mail_tools/psh', 'example.ics'), 'wb')
+	f.write(cal.to_ical())
+	f.close()
 
