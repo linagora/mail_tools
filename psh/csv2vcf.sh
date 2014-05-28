@@ -32,4 +32,4 @@ done
 
 python csv2vcf.py --profile agglolo_1 --data ${PROFILE_DATA} --output ${OUTPUT_DIRECTORY} > ~/log.txt 2>&1
 
-sed -i -e 's/<double-quote\/>/"/g' -e 's/<comma\/>/,/g' ${PROFILE_DATA}/${profil}"_contacts.vcf"
+sed -i -e 's/<double-quote\/>/"/g' -e 's/<comma\/>/\\,/g' ${PROFILE_DATA}/${profil}"_contacts.vcf"

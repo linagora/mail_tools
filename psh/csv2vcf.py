@@ -12,19 +12,17 @@ class VCard:
 		# Tel [45]
 		a_vcf_card = a_vcf_card + '\nVERSION:3.0'
 		a_vcf_card = a_vcf_card + '\nN:'+contact_arr[27].strip('"')
-		a_vcf_card = a_vcf_card + '\nFN:'+contact_arr[27].strip('"')
+		a_vcf_card = a_vcf_card + '\nFN:'+contact_arr[69].strip('"').split('<comma/> ')[0]+';'+contact_arr[69].strip('"').split('<comma/> ')[1]
 		a_vcf_card = a_vcf_card + '\nORG:'+contact_arr[53].strip('"')
 		a_vcf_card = a_vcf_card + '\nTITLE:'+contact_arr[134].strip('"')
 		for a_work_tel in contact_arr[45].strip('"').split(';'):
 			a_vcf_card = a_vcf_card + '\nTEL;TYPE=WORK,VOICE:'+a_work_tel
 		for a_home_tel in contact_arr[86].strip('"').split(';'):
 			a_vcf_card = a_vcf_card + '\nTEL;TYPE=HOME,VOICE:'+a_home_tel
-		for a_work_address in contact_arr[36].strip('"').split(';'):
-			a_vcf_card = a_vcf_card + '\nADR;TYPE=WORK:;;'+a_work_address
-			a_vcf_card = a_vcf_card + '\nLABEL;TYPE=WORK:;;'+a_work_address
-		for a_home_address in contact_arr[78].strip('"').split(';'):
-			a_vcf_card = a_vcf_card + '\nADR;TYPE=HOME:;;'+a_home_address
-			a_vcf_card = a_vcf_card + '\nLABEL;TYPE=HOME:;;'+a_home_address
+		a_vcf_card = a_vcf_card + '\nADR;TYPE=WORK:'+contact_arr[39].strip('"')+';;'+contact_arr[42].strip('"')+';'+contact_arr[37].strip('"')+';;'+contact_arr[39].strip('"')+';'+contact_arr[38].strip('"')
+		a_vcf_card = a_vcf_card + '\nLABEL;TYPE=WORK:'+contact_arr[39].strip('"')+';;'+contact_arr[42].strip('"')+';'+contact_arr[37].strip('"')+';;'+contact_arr[39].strip('"')+';'+contact_arr[80].strip('"')
+		a_vcf_card = a_vcf_card + '\nADR;TYPE=HOME:'+contact_arr[81].strip('"')+';;'+contact_arr[84].strip('"')+';'+contact_arr[79].strip('"')+';;'+contact_arr[81].strip('"')+';'+contact_arr[80].strip('"')
+		a_vcf_card = a_vcf_card + '\nLABEL;TYPE=HOME:'+contact_arr[81].strip('"')+';;'+contact_arr[84].strip('"')+';'+contact_arr[79].strip('"')+';;'+contact_arr[81].strip('"')+';'+contact_arr[38].strip('"')
 		a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+contact_arr[57].strip('"')
 		a_vcf_card = a_vcf_card + '\nEND:VCARD\n'
 		return a_vcf_card
