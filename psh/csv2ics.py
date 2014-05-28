@@ -133,13 +133,14 @@ class ExportToCsv:
 				a_moved_event = self.create_moved_event(l_event, a_recurrence_number, a_item_number, l_tzinfo, a_recipient_dict, email_organizer)
 				moved_events_list.append(a_moved_event)
 
-	def process_recurrence(self, recurrence_line, l_event, l_line_number):
+	def process_recurrence(self, recurrence_line, l_event, l_line_number, a_tzinfo):
 		logger.debug('process_recurrence')
 		line_len=len(recurrence_line)
 
 		if (l_line_number > 1) and (line_len > 1):
 			recurrence_arr = recurrence_line.split(',')
 			recurrence_type = recurrence_arr[16].strip('"')
+			recurrence_noenddate = recurrence_arr[12].strip('"')
 			recurrence_interval = recurrence_arr[10].strip('"')
 			recurrence_instance = recurrence_arr[9].strip('"')
 			recurrence_dayofweek = recurrence_arr[5].strip('"')
@@ -154,35 +155,40 @@ class ExportToCsv:
 			instance_dict = {'1' : '+1','2' : '2','3' : '3','4' : '4','5' : '-1',}
 			# week_day = {'1': '0','2': '1','4': '2','8': '3','16': '4','5': '5','64': '6',}
 
+			rec_dict = dict()
 			if recurrence_type == '0':
-				l_event.add('rrule', {'freq': 'daily',})
+				rec_dict = {'freq': 'daily',}
 			elif recurrence_type == '1':
-				if  recurrence_interval == '1':
+				rec_dict = {'freq': 'weekly', 'byday': weekday_list, }
+				if  recurrence_interval != '1':
 					logger.debug('week_day:'+','.join(weekday_list))
-					l_event.add('rrule', {'freq': 'weekly', 'byday': weekday_list, })
-				else:
-					l_event.add('rrule', {'freq': 'weekly', 'interval': recurrence_arr[10].strip('"'), 'byday': weekday_list, })
+					rec_dict['interval'] = recurrence_arr[10].strip('"')
 			elif recurrence_type == '2':
-				if  recurrence_interval == '1':
+				rec_dict = {'freq': 'monthly', 'bymonthday': recurrence_dayofmonth, }
+				if  recurrence_interval != '1':
 					logger.debug('week_day:'+','.join(weekday_list))
-					l_event.add('rrule', {'freq': 'monthly', 'bymonthday': recurrence_dayofmonth, })
-				else:
-					l_event.add('rrule', {'freq': 'monthly', 'interval': recurrence_arr[10].strip('"'), 'bymonthday': recurrence_dayofmonth, })
+					rec_dict['interval'] = recurrence_arr[10].strip('"')
 			elif recurrence_type == '3':
 				logger.debug('rrule added')
-				if  recurrence_interval == '1':
+				rec_dict = {'freq': 'monthly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], }
+				if  recurrence_interval != '1':
 					logger.debug('week_day:'+','.join(weekday_list))
-					l_event.add('rrule', {'freq': 'monthly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], })
-				else:
-					l_event.add('rrule', {'freq': 'monthly', 'interval': recurrence_arr[10].strip('"'), 'wkst': instance_dict[recurrence_instance] + weekday_list[0], })
+					rec_dict['interval'] =  recurrence_arr[10].strip('"')
 			elif recurrence_type == '4':
 				logger.debug('rrule added')
 			elif recurrence_type == '5':
 				logger.debug('rrule added')
-				l_event.add('rrule', {'freq': 'yearly', 'bymonth': recurrence_monthofyear, 'bymonthday': recurrence_dayofmonth, })
+				rec_dict = {'freq': 'yearly', 'bymonth': recurrence_monthofyear, 'bymonthday': recurrence_dayofmonth, }
 			elif recurrence_type == '6':
 				logger.debug('rrule added')
-				l_event.add('rrule', {'freq': 'yearly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], 'bymonth': recurrence_monthofyear})
+				rec_dict = {'freq': 'yearly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], 'bymonth': recurrence_monthofyear}
+
+			logger.debug('recurrence_noenddate:' + recurrence_noenddate)
+			if recurrence_noenddate == 'False':
+				a_day, a_month, a_year, a_hour, a_minute, a_second = self.split_outlook_date(recurrence_arr[14].strip('"'))
+				rec_dict['until'] = datetime(a_year, a_month, a_day, a_hour, a_minute, a_second, tzinfo=pytz.timezone(a_tzinfo))
+
+			l_event.add('rrule', rec_dict)
 
 	def process_item(self, outlook_line, l_event, l_line_number, a_recipient_dict, a_email_organizer):
 		logger.debug('process_item')
@@ -318,7 +324,7 @@ if __name__ == '__main__':
 				line_rec_number=0
 				for recurrence_line in f_recurrence:
 					line_rec_number=line_rec_number+1
-					a_export_to_csv.process_recurrence(recurrence_line, l_event, line_rec_number)
+					a_export_to_csv.process_recurrence(recurrence_line, l_event, line_rec_number, l_tzinfo)
 				f_recurrence.close()
 
 				files_exceptions_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.exception.*.' + recurrence_number + '.' + item_number + '.iconv')
