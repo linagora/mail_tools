@@ -23,6 +23,7 @@ class EmailEmpty(Exception):
 
 class ExportToCsv:
 	def split_outlook_date(self, a_outlook_date):
+		logger.debug('split_outlook_date:'+a_outlook_date)
 		date_without_quote = a_outlook_date.strip('"')
 		day_part=date_without_quote[:date_without_quote.find(' ')]
 		logger.debug('daypart:%s' % day_part)
@@ -58,20 +59,20 @@ class ExportToCsv:
 
 		event['organizer'] = organizer
 
-		event_location = a_event_arr[36][1:len(a_event_arr[36])-1]
+		event_location = a_event_arr[36].strip('"')
 		# print event_location
 		event['location'] = vText(event_location)
 
 		#event['uid'] = '20050115T101010/27346262376@mxm.dk'
-		event['uid'] = a_event_arr[10][1:len(a_event_arr[10])-1]
+		event['uid'] = a_event_arr[10].strip('"')
 
-		event_importance = a_event_arr[16][1:len(a_event_arr[16])-1]
+		event_importance = a_event_arr[16].strip('"')
 		# print event_importance
 		event.add('priority', event_importance)
 
 		required_attendees = []
 		if a_event_arr[52].strip('"') != '':
-			required_attendees = a_event_arr[52][1:len(a_event_arr[52])-1].split('; ')
+			required_attendees = a_event_arr[52].strip('"').split('; ')
 		logger.debug('required_attendees:' + '#'.join(required_attendees))
 
 		for a_required in required_attendees:
@@ -240,12 +241,15 @@ class ExportToCsv:
 		return l_attendee
 
 	def process_recipient(self, a_recipient_line, a_line_recipient_number, a_recipient_dict):
-		logger.debug('process_recipient')
+		logger.debug('process_recipient:'+a_recipient_line)
 
 		if (a_line_recipient_number > 1) and (len(a_recipient_line) > 1):
 			recipient_arr = a_recipient_line.split(',')
+			for a_element in recipient_arr:
+				logger.debug('a_element:'+a_element)
 
 			a_address = recipient_arr[11].strip('"')
+			logger.debug('a_address:'+a_address)
 			if (a_address.rfind('(') == -1):
 				l_attendee_cn = a_address
 			else:
@@ -356,7 +360,7 @@ if __name__ == '__main__':
 		except NameEmpty as e:
 			logger.error('Exception caught')
 
-	f = open(os.path.join('/home/stlo_agglo/mail_tools/psh', 'example.ics'), 'wb')
+	f = open(os.path.join(data_directory, profile_to_process + '_agendas.ics'), 'wb')
 	f.write(cal.to_ical())
 	f.close()
 

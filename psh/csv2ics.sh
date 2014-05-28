@@ -10,6 +10,8 @@ rm ${PROFILE_DATA}/*.iconv
 for i in `find ${PROFILE_DATA} -type f`
 do
 	iconv -f UTF-16 -t UTF-8 $i | sed -e 's///' -ne '
+s/\([^,]\)""\([^,]\)/\1<double-quote\/>\2/g
+s/\([^"]\),\([^"]\)/\1<comma\/>\2/g
 /^".*[",]$/ {
 p
 }
@@ -29,3 +31,4 @@ done
 
 python csv2ics.py --profile agglolo_1 --data ${PROFILE_DATA} --domain ${DOMAIN_TO_PROCESS} > ~/log.txt 2>&1
 
+sed -i -e 's/<double-quote\/>/"/g' -e 's/<comma\/>/,/g' ${PROFILE_DATA}/${profil}"_agendas.ics"
