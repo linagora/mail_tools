@@ -4,6 +4,7 @@ from icalendar import Calendar, Event, vCalAddress, vText
 import pytz
 from datetime import datetime
 import logging
+import argparse
 import tempfile, os
 
 class NameEmpty(Exception):
@@ -33,9 +34,8 @@ class ExportToCsv:
 
 		return int(a_day_arr[0]), int(a_day_arr[1]), int(a_day_arr[2]), int(a_hour_arr[0]), int(a_hour_arr[1]), int(a_hour_arr[2]) 
 
-	def deal_event(self, a_event_arr, a_tzinfo, a_recipient_dict):
-		# print event_arr
-		# print "deal event"
+	def deal_event(self, a_event_arr, a_tzinfo, a_recipient_dict, a_email_organizer):
+		logger.debug('deal_event')
 		event = Event()
 
 		# summary - Body
@@ -53,7 +53,7 @@ class ExportToCsv:
 		# event.add('dtstamp', datetime(2005, 4, 4, 0, 10, 0, tzinfo=pytz.utc))
 
 		organizer_field = a_event_arr[43].strip('"')
-		organizer=self.get_cal_address(organizer_field, a_recipient_dict)
+		organizer=self.get_cal_address(organizer_field, a_recipient_dict, a_email_organizer)
 		organizer.params['role'] = vText('CHAIR')
 
 		event['organizer'] = organizer
@@ -69,10 +69,13 @@ class ExportToCsv:
 		# print event_importance
 		event.add('priority', event_importance)
 
-		required_attendees = a_event_arr[52][1:len(a_event_arr[52])-1].split('; ')
-		# print a_event_arr[52]
-		# print required_attendees
+		required_attendees = []
+		if a_event_arr[52].strip('"') != '':
+			required_attendees = a_event_arr[52][1:len(a_event_arr[52])-1].split('; ')
+		logger.debug('required_attendees:' + '#'.join(required_attendees))
+
 		for a_required in required_attendees:
+			logger.debug('for a_required:' + a_required)
 			a_cal_required_attendee = self.get_cal_address(a_required, a_recipient_dict)
 			a_cal_required_attendee.params['ROLE'] = vText('REQ-PARTICIPANT')
 			# TO FINISH
@@ -93,14 +96,14 @@ class ExportToCsv:
 				recurrence_dayofweek = recurrence_dayofweek - int(i)
 		return list_of_days
 
-	def process_appointment(self, a_appointment_line, a_event, a_line_appointment_number, a_moved_event_list, a_tzinfo, a_recipient_dict):
-		if (a_line_appointment_number>2) and (len(a_appointment_line) > 1):
+	def process_appointment(self, a_appointment_line, a_event, a_line_appointment_number, a_moved_event_list, a_tzinfo, a_recipient_dict, email_organizer):
+		if (a_line_appointment_number>1) and (len(a_appointment_line) > 1):
 			a_appointment_arr = a_appointment_line.split(',')
-			a_moved_event = self.deal_event(a_appointment_arr, a_tzinfo, a_recipient_dict)
+			a_moved_event = self.deal_event(a_appointment_arr, a_tzinfo, a_recipient_dict, email_organizer)
 			a_moved_event.add('recurrence-id', l_event.get('dtstart'))
 			a_moved_event_list.append(a_moved_event)
 
-	def create_moved_event(self, l_event, a_recurrence_number, a_item_number, a_tzinfo, a_recipient_dict):
+	def create_moved_event(self, l_event, a_recurrence_number, a_item_number, a_tzinfo, a_recipient_dict, email_organizer):
 		a_moved_event_list = []
 		
 		files_appointement_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.appointmentitem.*.' + recurrence_number + '.' + item_number + '.iconv')
@@ -109,16 +112,16 @@ class ExportToCsv:
 			line_appointment_number=0
 			for appointment_line in f_appointment:
 				line_appointment_number=line_appointment_number+1
-				self.process_appointment(appointment_line, l_event, line_appointment_number, a_moved_event_list, a_tzinfo, a_recipient_dict)
+				self.process_appointment(appointment_line, l_event, line_appointment_number, a_moved_event_list, a_tzinfo, a_recipient_dict, email_organizer)
 			f_appointment.close()
 		return a_moved_event_list[0]
 
-	def process_exception(self, exception_line, l_event, l_line_number, l_tzinfo, a_date_list_exc, moved_events_list, a_recurrence_number, a_item_number, a_recipient_dict):
+	def process_exception(self, exception_line, l_event, l_line_number, l_tzinfo, a_date_list_exc, moved_events_list, a_recurrence_number, a_item_number, a_recipient_dict, email_organizer):
 		logger.debug('process_exception')
 		logger.debug(exception_line)
 		line_len=len(exception_line)
 
-		if (l_line_number > 2) and (line_len > 1):
+		if (l_line_number > 1) and (line_len > 1):
 			exception_arr = exception_line.split(',')
 			is_deleted = exception_arr[5].strip('"')
 			a_day, a_month, a_year, a_hour, a_minute, a_second = self.split_outlook_date(exception_arr[6])
@@ -127,14 +130,14 @@ class ExportToCsv:
 				a_date_list_exc.append(datetime(a_year, a_month, a_day, a_hour, a_minute, a_second, tzinfo=pytz.timezone(l_tzinfo)))
 			else:
 				logger.debug('is_not_deleted:'+exception_line)
-				a_moved_event = self.create_moved_event(l_event, a_recurrence_number, a_item_number, l_tzinfo, a_recipient_dict)
+				a_moved_event = self.create_moved_event(l_event, a_recurrence_number, a_item_number, l_tzinfo, a_recipient_dict, email_organizer)
 				moved_events_list.append(a_moved_event)
 
 	def process_recurrence(self, recurrence_line, l_event, l_line_number):
 		logger.debug('process_recurrence')
 		line_len=len(recurrence_line)
 
-		if (l_line_number > 2) and (line_len > 1):
+		if (l_line_number > 1) and (line_len > 1):
 			recurrence_arr = recurrence_line.split(',')
 			recurrence_type = recurrence_arr[16].strip('"')
 			recurrence_interval = recurrence_arr[10].strip('"')
@@ -181,13 +184,13 @@ class ExportToCsv:
 				logger.debug('rrule added')
 				l_event.add('rrule', {'freq': 'yearly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], 'bymonth': recurrence_monthofyear})
 
-	def process_item(self, outlook_line, l_event, l_line_number, a_recipient_dict):
+	def process_item(self, outlook_line, l_event, l_line_number, a_recipient_dict, a_email_organizer):
 		logger.debug('process_item')
 		line_len=len(outlook_line)
 
-		if (l_line_number > 2) and (line_len > 1):
+		if (l_line_number > 1) and (line_len > 1):
 			event_arr = outlook_line.split(',')
-			l_event = self.deal_event(event_arr, l_tzinfo, a_recipient_dict)
+			l_event = self.deal_event(event_arr, l_tzinfo, a_recipient_dict, a_email_organizer)
 
 	#		is_recurring = event_arr[35]
 	#		event_conversation_index = event_arr[10]
@@ -204,14 +207,16 @@ class ExportToCsv:
 	#				l_event = deal_event(event_arr, l_tzinfo)
 		return l_event
 
-	def get_cal_address(self, a_address, a_recipient_dict):
+	def get_cal_address(self, a_address, a_recipient_dict, e_mail=None):
 		logger.debug('get_cal_address')
 		logger.debug('a_address:'+a_address)
 		# l_attendee_email = a_address[a_address.rfind('('):a_address.rfind(')')]
 
-		if (a_address.rfind('(') == -1):
+		if (a_address == ''):
+			l_attendee_cn = e_mail.split('@')[0]
+		elif (a_address.rfind('(') == -1):
 			l_attendee_cn = a_address
-		else:
+		elif a_address != '':
 			# -1 is here not to get the space before (
 			l_attendee_cn = a_address[:a_address.rfind('(')-1]
 
@@ -219,7 +224,10 @@ class ExportToCsv:
 		logger.debug('recipient_dict keys:<'+'#'.join(a_recipient_dict.keys())+'>')
 		if l_attendee_cn == '':
 			raise NameEmpty(a_address)
-		l_attendee_email = a_recipient_dict[l_attendee_cn][0]
+		if e_mail is None:
+			l_attendee_email = a_recipient_dict[l_attendee_cn][0]
+		else:
+			l_attendee_email = e_mail
 		l_attendee = vCalAddress('MAILTO:'+l_attendee_email)
 		l_attendee.params['cn'] = vText(l_attendee_cn)
 
@@ -228,7 +236,7 @@ class ExportToCsv:
 	def process_recipient(self, a_recipient_line, a_line_recipient_number, a_recipient_dict):
 		logger.debug('process_recipient')
 
-		if (a_line_recipient_number > 2) and (len(a_recipient_line) > 1):
+		if (a_line_recipient_number > 1) and (len(a_recipient_line) > 1):
 			recipient_arr = a_recipient_line.split(',')
 
 			a_address = recipient_arr[11].strip('"')
@@ -249,12 +257,19 @@ if __name__ == '__main__':
 	logger = logging.getLogger('tcpserver')
 	logger.setLevel('DEBUG')
 
+	parser = argparse.ArgumentParser(description='CSV to ICS')
+	parser.add_argument('--profile')
+	parser.add_argument('--data')
+	parser.add_argument('--domain')
+	args = parser.parse_args()
+
 	cal = Calendar()
 	cal.add('prodid', '-//My calendar product//mxm.dk//')
 	cal.add('version', '2.0')
 
-	profile_to_process='profil_agglolo_1'
-	data_directory='../output/'+profile_to_process
+	profile_to_process=args.profile
+	domain_to_process=args.domain
+	data_directory=args.data
 	line_number = 0
 	l_tzinfo="Europe/Paris"
 	a_export_to_csv = ExportToCsv()
@@ -281,16 +296,16 @@ if __name__ == '__main__':
 				for recipient_line in f_recipient:
 					line_recipient_number=line_recipient_number+1
 					a_export_to_csv.process_recipient(recipient_line, line_recipient_number, recipient_dict)
-				if len(recipient_dict) == 0:
-					raise EmailEmpty("No recipients found in "+a_recipient_file)
+				# if len(recipient_dict) == 0:
+					# raise EmailEmpty("No recipients found in "+a_recipient_file)
 
-			logger.debug('file handled:' + a_item_file)
 			logger.debug('recipient_dict keys1:<'+'#'.join(recipient_dict.keys())+'>')
+			logger.debug('file handled:' + a_item_file)
 			f_item = open(a_item_file, 'r')
 			line_number=0
 			for outlook_line in f_item:
 				line_number=line_number+1
-				l_event = a_export_to_csv.process_item(outlook_line, l_event, line_number, recipient_dict)
+				l_event = a_export_to_csv.process_item(outlook_line, l_event, line_number, recipient_dict, profile_to_process + '@' + domain_to_process)
 			f_item.close()
 
 			files_recurrences_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.recurrence.*.' + item_number + '.iconv')
@@ -315,10 +330,13 @@ if __name__ == '__main__':
 					line_exception_number=0
 					for exception_line in f_exception:
 						line_exception_number=line_exception_number+1
-						a_export_to_csv.process_exception(exception_line, l_event, line_exception_number, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number, recipient_dict)
+						a_export_to_csv.process_exception(exception_line, l_event, line_exception_number, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number, recipient_dict, profile_to_process + '@' + domain_to_process)
+						logger.debug('a_date_list_exc len:%s' % len(a_date_list_exc))
 					f_exception.close()
 
+				logger.debug('a_date_list_exc final len:%s' % len(a_date_list_exc))
 				if len(a_date_list_exc) != 0:
+					logger.debug('adding a exdate')
 					l_event.add('exdate', a_date_list_exc)
 
 			cal.add_component(l_event)
