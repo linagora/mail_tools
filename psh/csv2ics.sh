@@ -9,7 +9,7 @@ rm ${PROFILE_DATA}/*.iconv
 
 for i in `find ${PROFILE_DATA} -type f`
 do
-	iconv -f UTF-16 -t UTF-8 $i | sed -e 's///' -ne '
+	iconv -f UTF-16 -t UTF-8 $i | sed -e '1,2d' -e 's///' -ne '
 s/\([^,]\)""\([^,]\)/\1<double-quote\/>\2/g
 s/\([^"]\),\([^"]\)/\1<comma\/>\2/g
 /^".*[",]$/ {
