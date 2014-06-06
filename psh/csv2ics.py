@@ -80,10 +80,25 @@ class ExportToCsv:
 			a_cal_required_attendee = self.get_cal_address(a_required, a_recipient_dict)
 			a_cal_required_attendee.params['ROLE'] = vText('REQ-PARTICIPANT')
 			# TO FINISH
-			a_cal_required_attendee.params['PARTSTAT'] = vText('ACCEPTED')
+			# a_cal_required_attendee.params['PARTSTAT'] = vText('ACCEPTED')
 			a_cal_required_attendee.params['CUTYPE'] = vText('INDIVIDUAL')
 			# TO FINISH
 			event.add('attendee', a_cal_required_attendee, encode=0)
+
+		optional_attendees = []
+		if a_event_arr[42].strip('"') != '':
+			optional_attendees = a_event_arr[42].strip('"').split('; ')
+		logger.debug('optional_attendees:' + '#'.join(optional_attendees))
+
+		for a_optional in optional_attendees:
+			logger.debug('for a_optional:' + a_optional)
+			a_cal_optional_attendee = self.get_cal_address(a_optional, a_recipient_dict)
+			a_cal_optional_attendee.params['ROLE'] = vText('OPT-PARTICIPANT')
+			# TO FINISH
+			# a_cal_optional_attendee.params['PARTSTAT'] = vText('ACCEPTED')
+			a_cal_optional_attendee.params['CUTYPE'] = vText('INDIVIDUAL')
+			# TO FINISH
+			event.add('attendee', a_cal_optional_attendee, encode=0)
 
 		return event
 
@@ -98,7 +113,7 @@ class ExportToCsv:
 		return list_of_days
 
 	def process_appointment(self, a_appointment_line, a_event, a_moved_event_list, a_tzinfo, a_recipient_dict, email_organizer):
-		if len(a_appointment_line) > 1):
+		if len(a_appointment_line) > 1:
 			a_appointment_arr = a_appointment_line.split(',')
 			a_moved_event = self.deal_event(a_appointment_arr, a_tzinfo, a_recipient_dict, email_organizer)
 			a_moved_event.add('recurrence-id', l_event.get('dtstart'))
@@ -227,21 +242,32 @@ class ExportToCsv:
 
 		logger.debug('l_attendee_cn:<'+l_attendee_cn+'>')
 		logger.debug('recipient_dict keys:<'+'#'.join(a_recipient_dict.keys())+'>')
+		a_part_stat = ''
+
 		if l_attendee_cn == '':
 			raise NameEmpty(a_address)
-		if e_mail is None:
+		if l_attendee_cn in a_recipient_dict:
 			l_attendee_email = a_recipient_dict[l_attendee_cn][0]
+			if (a_recipient_dict[l_attendee_cn][1] == '0') or (a_recipient_dict[l_attendee_cn][1] == '3') or (a_recipient_dict[l_attendee_cn][1] == '1'):
+				a_part_stat = 'ACCEPTED'
+			elif (a_recipient_dict[l_attendee_cn][1] == '4'):
+				a_part_stat = 'DECLINED'
+			elif (a_recipient_dict[l_attendee_cn][1] == '2'):
+				a_part_stat = 'TENTATIVE'
 		else:
 			l_attendee_email = e_mail
+			a_part_stat = 'ACCEPTED'
+
 		l_attendee = vCalAddress('MAILTO:'+l_attendee_email)
 		l_attendee.params['cn'] = vText(l_attendee_cn)
+		l_attendee.params['PARTSTAT'] = vText(a_part_stat)
 
 		return l_attendee
 
 	def process_recipient(self, a_recipient_line, a_recipient_dict):
 		logger.debug('process_recipient:'+a_recipient_line)
 
-		if (a_line_recipient_number > 1) and (len(a_recipient_line) > 1):
+		if (len(a_recipient_line) > 1):
 			recipient_arr = a_recipient_line.split(',')
 			for a_element in recipient_arr:
 				logger.debug('a_element:'+a_element)
