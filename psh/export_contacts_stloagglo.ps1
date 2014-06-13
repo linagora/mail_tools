@@ -5,15 +5,16 @@
 #														#
 #########################################################
 
+$room = 'profil_agglolo_1'
 $olSession = (New-Object -ComObject Outlook.Application).Session
-$olSession.Logon('profil_agglolo_1') #Outlook is the profile name
+$olSession.Logon($room) #Outlook is the profile name
 $contactsFolder = 10
 $tempFolderName = 'temp_folder_' + (get-date -Format ddmmyyyhhmmss)
 $myContacts = $olSession.GetDefaultFolder($contactsFolder).Items
 $tempFolder = $olSession.GetDefaultFolder($contactsFolder).Folders.Add($tempFolderName)
 
-Write-Host "..getting unique items"
-$uniqueContacts = $myContacts | Sort FullName -Unique
+#Write-Host "..getting unique items"
+#$uniqueContacts = $myContacts | Sort FullName -Unique
 
 #move contacts to temp contacts folder
 #foreach ($Contact in $uniqueContacts) {
@@ -21,9 +22,15 @@ $uniqueContacts = $myContacts | Sort FullName -Unique
 #}
 
 #read default contacts again and dump to csv
-Write-Host "..export duplicates to csv"
+Write-Host "..export contacts to csv"
 $duplicates = $olSession.GetDefaultFolder($contactsFolder).Items
-$duplicates | Export-Csv duplicates.csv -encoding "Unicode"
+$pathToExport = "..\output\" + $room
+$fileToExport = $pathToExport + "\contacts.csv"
+if (!(Test-Path $pathToExport))
+{
+	md -Path $pathToExport
+}
+$duplicates | Export-Csv $fileToExport -encoding "Unicode"
 
 #delete all contacts left in default contacts folder
 #Foreach ($duplicate in $duplicates){

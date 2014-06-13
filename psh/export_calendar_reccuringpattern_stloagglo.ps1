@@ -46,8 +46,11 @@ foreach ($room in $rooms)
 
 		Write-Host "..exporting Calendar recurring patterns to CSV"
 		foreach ($Contact in $calExport) {
+			Write-Host "..export item "+$l_nb_item
 			# $Contact.Move($tempFolder) | foreach-object {Write-Progress "Backup unique items to temp folder..." $_.FullName; $_.FullName} | Out-Null
 			$Contact | Export-Csv $exportFileRecurrences".item."$l_nb_item -encoding "unicode"
+			# $Contact.RequiredAttendees | Export-Csv $exportFileRecurrences".itemrequiredattendees."$l_nb_item -encoding "unicode"
+			# $Contact.OptionalAttendees | Export-Csv $exportFileRecurrences".itemoptionalattendees."$l_nb_item -encoding "unicode"
 			$Contact.Recipients | Export-Csv $exportFileRecurrences".itemrecipients."$l_nb_item -encoding "unicode"
 			# $Contact.Parent | Export-Csv $exportFileRecurrences".parent."$l_nb_item -encoding "unicode"
 			$olRecurrences = $Contact.GetRecurrencePattern()
