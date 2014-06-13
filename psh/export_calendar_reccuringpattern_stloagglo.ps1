@@ -6,32 +6,74 @@ $rooms = (gc ..\input\rooms.txt) #//This could be done with get-mailbox as well
 $blankPRF = (gc ..\input\calexp.PRF) #//This file is used to create Outlook profiles on Windows
 #//$olEXE = "C:\Program Files\Microsoft Office\Office12\OUTLOOK.EXE"
 $olEXE = "C:\Program Files\Microsoft Office\OFFICE11\OUTLOOK.EXE"
+$mail_tools_home = "C:\Documents and Settings\test\mail_tools\input\"
 
-foreach ($room in $rooms)
+$mode_extract = $args[0]
+
+foreach ($a_line in $rooms)
 	{
-		Write-Host "..starting" $room -ForegroundColor Yellow 
+		$credentials = $a_line.Split('	')
+		$room = $credentials[0]
+		if ($mode_extract == 'exchange')
+		{
+			$password = $credentials[1]
+		}
+		Write-Host "..starting" $room "/" $password -ForegroundColor Yellow 
 		#// Tester avec clone VMWare
 #//		Add-MailboxPermission -Identity $room -User $currentUser -Accessrights Fullaccess -InheritanceType all -Confirm:$False > $null
 #//		$homeServer = Get-Mailbox $room | select ServerName
-#//		$newPRF = ".\" + $room + ".prf"
-		$exportFileRecurrences = "..\output\" + $room + ".csv"
-		$exportFileWithoutRecurrences = "..\output\" + $room + "_withoutrecurrences.csv"
+		$newPRF = $mail_tools_home + $room + ".prf"
+		$exportDirectory = "..\output\" + $room + "\"
+		if (!(Test-Path $exportDirectory))
+		{
+			md -Path $exportDirectory
+		}
+
+		$exportFileRecurrences = $exportDirectory + $room + ".csv"
+#//		$exportFileWithoutRecurrences = "..\output\" + $room + "_withoutrecurrences.csv"
 
 #//Create a new PRF file for the current Room mailbox
 		Write-Host "..creating PRF"
 #//		$blankPRF | foreach { $_ -replace "%UserName%", "$room"} | foreach { $_ -replace "%homeserver%", "$($homeServer.ServerName)"} | foreach { $_ -replace "calexp", "$room"} | Set-Content $newPRF
+		$blankPRF | foreach { $_ -replace "%UserName%", "$room"} | foreach { $_ -replace "calexp", "$room"} | Set-Content $newPRF
 
 #//Start Outlook and import the PRF
-		Write-Host "..importing PRF using Outlook"
-		#// & $olEXE /importPRF $newPRF /profile $room
-		& $olEXE /profile $room
-		sleep (15)
+		Write-Host "..importing PRF $newPRF using Outlook"
+		if ($mode_extract == 'exchange')
+		{
+			& $olEXE /importprf $newPRF /profile $room
+		}
+		else
+		{
+			& $olEXE /profile $room
+		}
+		sleep (3)
+
+		if ($mode_extract == 'exchange')
+		{
+			$wshell = New-Object -ComObject wscript.shell;
+			$wshell.aAppActivate('Mot de passe');
+			sleep(1);
+			$wshell.SendKeys($room);
+			$wshell.SendKeys('{TAB}');
+			$wshell.SendKeys($password);
+			$wshell.SendKeys('{TAB}');
+			$wshell.SendKeys('saintlo.fr');
+			$wshell.SendKeys('{ENTER}');
+			sleep(1);
+
+			$wshell.SendKeys($password);
+			$wshell.SendKeys('{ENTER}');
+			sleep(1);
+		}
 
 #//Logon to current Outlook session and export calender.
 		Write-Host "..attaching to Outlook session"
 		$olApplication = New-Object -ComObject Outlook.Application
 		$olSession = $olApplication.Session
 		$olSession.Logon('$room')
+		sleep(3);
+
 		$calFolder = 9
 		
 		# Export with recurrences
@@ -92,7 +134,7 @@ foreach ($room in $rooms)
 #//		Remove-Item $newPRF
 
 		Write-Host "..killing Outlook"
-		get-process OUTLOOK | Stop-Process -Force
-		sleep (15)
+		get-process OUTLOOK | Stop-Process
+		sleep (4)
 	}
 
