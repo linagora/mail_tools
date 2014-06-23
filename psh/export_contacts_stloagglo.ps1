@@ -8,7 +8,10 @@
 $rooms = (gc ..\input\rooms.txt) #//This could be done with get-mailbox as well
 $olEXE = "C:\Program Files\Microsoft Office\OFFICE11\OUTLOOK.EXE"
 
-$mode_extract = $args[0]
+if ($args.count > 0)
+{
+	$mode_extract = $args[0]
+}
 
 foreach ($a_line in $rooms)
 	{

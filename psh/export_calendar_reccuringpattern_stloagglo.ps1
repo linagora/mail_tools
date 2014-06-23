@@ -8,7 +8,10 @@ $blankPRF = (gc ..\input\calexp.PRF) #//This file is used to create Outlook prof
 $olEXE = "C:\Program Files\Microsoft Office\OFFICE11\OUTLOOK.EXE"
 $mail_tools_home = "C:\Documents and Settings\test\mail_tools\input\"
 
-$mode_extract = $args[0]
+if ($args.count > 0)
+{
+	$mode_extract = $args[0]
+}
 
 foreach ($a_line in $rooms)
 	{
