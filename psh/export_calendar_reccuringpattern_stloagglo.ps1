@@ -5,7 +5,7 @@ $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().name
 $rooms = (gc ..\input\rooms.txt) #//This could be done with get-mailbox as well
 $blankPRF = (gc ..\input\calexp.PRF) #//This file is used to create Outlook profiles on Windows
 #//$olEXE = "C:\Program Files\Microsoft Office\Office12\OUTLOOK.EXE"
-$olEXE = "C:\Program Files\Microsoft Office\OFFICE11\OUTLOOK.EXE"
+$olEXE = "C:\Program Files\Microsoft Office\OFFICE12\OUTLOOK.EXE"
 $mail_tools_home = "C:\Documents and Settings\test\mail_tools\input\"
 
 if ($args.length -gt 0)
