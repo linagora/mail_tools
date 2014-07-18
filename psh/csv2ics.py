@@ -2,6 +2,7 @@
 
 from icalendar import Calendar, Event, vCalAddress, vText
 import pytz
+import csv
 from datetime import datetime
 import logging
 import argparse
@@ -24,7 +25,7 @@ class EmailEmpty(Exception):
 class ExportToCsv:
 	def split_outlook_date(self, a_outlook_date):
 		logger.debug('split_outlook_date:'+a_outlook_date)
-		date_without_quote = a_outlook_date.strip('"')
+		date_without_quote = a_outlook_date
 		day_part=date_without_quote[:date_without_quote.find(' ')]
 		logger.debug('daypart:%s' % day_part)
 		hour_part=date_without_quote[date_without_quote.find(' ')+1:]
@@ -53,26 +54,26 @@ class ExportToCsv:
 
 		# event.add('dtstamp', datetime(2005, 4, 4, 0, 10, 0, tzinfo=pytz.utc))
 
-		organizer_field = a_event_arr[43].strip('"')
+		organizer_field = a_event_arr[43]
 		organizer=self.get_cal_address(organizer_field, a_recipient_dict, a_email_organizer)
 		organizer.params['role'] = vText('CHAIR')
 
 		event['organizer'] = organizer
 
-		event_location = a_event_arr[36].strip('"')
+		event_location = a_event_arr[36].replace('\r\n', '\\n')
 		# print event_location
 		event['location'] = vText(event_location)
 
 		#event['uid'] = '20050115T101010/27346262376@mxm.dk'
-		event['uid'] = a_event_arr[10].strip('"')
+		event['uid'] = a_event_arr[10]
 
-		event_importance = a_event_arr[16].strip('"')
+		event_importance = a_event_arr[16].replace('\r\n', '\\n')
 		# print event_importance
 		event.add('priority', event_importance)
 
 		required_attendees = []
-		if a_event_arr[52].strip('"') != '':
-			required_attendees = a_event_arr[52].strip('"').split('; ')
+		if a_event_arr[52]  != '':
+			required_attendees = a_event_arr[52].split('; ')
 		logger.debug('required_attendees:' + '#'.join(required_attendees))
 
 		for a_required in required_attendees:
@@ -86,8 +87,8 @@ class ExportToCsv:
 			event.add('attendee', a_cal_required_attendee, encode=0)
 
 		optional_attendees = []
-		if a_event_arr[42].strip('"') != '':
-			optional_attendees = a_event_arr[42].strip('"').split('; ')
+		if a_event_arr[42]  != '':
+			optional_attendees = a_event_arr[42].split('; ')
 		logger.debug('optional_attendees:' + '#'.join(optional_attendees))
 
 		for a_optional in optional_attendees:
@@ -136,8 +137,8 @@ class ExportToCsv:
 		line_len=len(exception_line)
 
 		if (line_len > 1):
-			exception_arr = exception_line.split(',')
-			is_deleted = exception_arr[5].strip('"')
+			exception_arr = exception_line
+			is_deleted = exception_arr[5]
 			a_day, a_month, a_year, a_hour, a_minute, a_second = self.split_outlook_date(exception_arr[6])
 			if  (is_deleted == "True"):
 				logger.debug('is_deleted:'+exception_line)
@@ -152,14 +153,14 @@ class ExportToCsv:
 		line_len=len(recurrence_line)
 
 		if (line_len > 1):
-			recurrence_arr = recurrence_line.split(',')
-			recurrence_type = recurrence_arr[16].strip('"')
-			recurrence_noenddate = recurrence_arr[12].strip('"')
-			recurrence_interval = recurrence_arr[10].strip('"')
-			recurrence_instance = recurrence_arr[9].strip('"')
-			recurrence_dayofweek = recurrence_arr[5].strip('"')
-			recurrence_dayofmonth = recurrence_arr[4].strip('"')
-			recurrence_monthofyear = recurrence_arr[11].strip('"')
+			recurrence_arr = recurrence_line
+			recurrence_type = recurrence_arr[16]
+			recurrence_noenddate = recurrence_arr[12]
+			recurrence_interval = recurrence_arr[10]
+			recurrence_instance = recurrence_arr[9]
+			recurrence_dayofweek = recurrence_arr[5]
+			recurrence_dayofmonth = recurrence_arr[4]
+			recurrence_monthofyear = recurrence_arr[11]
 			logger.debug('recurrence_type:'+recurrence_type)
 			logger.debug('recurrence_interval:'+recurrence_interval)
 			logger.debug('recurrence_dayofweek:'+recurrence_dayofweek)
@@ -176,18 +177,18 @@ class ExportToCsv:
 				rec_dict = {'freq': 'weekly', 'byday': weekday_list, }
 				if  recurrence_interval != '1':
 					logger.debug('week_day:'+','.join(weekday_list))
-					rec_dict['interval'] = recurrence_arr[10].strip('"')
+					rec_dict['interval'] = recurrence_arr[10]
 			elif recurrence_type == '2':
 				rec_dict = {'freq': 'monthly', 'bymonthday': recurrence_dayofmonth, }
 				if  recurrence_interval != '1':
 					logger.debug('week_day:'+','.join(weekday_list))
-					rec_dict['interval'] = recurrence_arr[10].strip('"')
+					rec_dict['interval'] = recurrence_arr[10]
 			elif recurrence_type == '3':
 				logger.debug('rrule added')
 				rec_dict = {'freq': 'monthly', 'wkst': instance_dict[recurrence_instance] + weekday_list[0], }
 				if  recurrence_interval != '1':
 					logger.debug('week_day:'+','.join(weekday_list))
-					rec_dict['interval'] =  recurrence_arr[10].strip('"')
+					rec_dict['interval'] =  recurrence_arr[10]
 			elif recurrence_type == '4':
 				logger.debug('rrule added')
 			elif recurrence_type == '5':
@@ -199,7 +200,7 @@ class ExportToCsv:
 
 			logger.debug('recurrence_noenddate:' + recurrence_noenddate)
 			if recurrence_noenddate == 'False':
-				a_day, a_month, a_year, a_hour, a_minute, a_second = self.split_outlook_date(recurrence_arr[14].strip('"'))
+				a_day, a_month, a_year, a_hour, a_minute, a_second = self.split_outlook_date(recurrence_arr[14])
 				rec_dict['until'] = datetime(a_year, a_month, a_day, a_hour, a_minute, a_second, tzinfo=pytz.timezone(a_tzinfo))
 
 			l_event.add('rrule', rec_dict)
@@ -209,7 +210,7 @@ class ExportToCsv:
 		line_len=len(outlook_line)
 
 		if (line_len > 1):
-			event_arr = outlook_line.split(',')
+			event_arr = outlook_line
 			l_event = self.deal_event(event_arr, l_tzinfo, a_recipient_dict, a_email_organizer)
 
 	#		is_recurring = event_arr[35]
@@ -268,11 +269,11 @@ class ExportToCsv:
 		logger.debug('process_recipient:'+a_recipient_line)
 
 		if (len(a_recipient_line) > 1):
-			recipient_arr = a_recipient_line.split(',')
+			recipient_arr = a_recipient_line
 			for a_element in recipient_arr:
 				logger.debug('a_element:'+a_element)
 
-			a_address = recipient_arr[11].strip('"')
+			a_address = recipient_arr[11].replace('\r\n', '\\n')
 			logger.debug('a_address:'+a_address)
 			if (a_address.rfind('(') == -1):
 				l_attendee_cn = a_address
@@ -281,8 +282,8 @@ class ExportToCsv:
 				l_attendee_cn = a_address[:a_address.rfind('(')-1]
 
 			# for each name, stores mail, meetingresponsestatus
-			recipient_mail = recipient_arr[4].strip('"') 
-			a_recipient_dict[l_attendee_cn] = [ recipient_mail, recipient_arr[10].strip('"') ,]
+			recipient_mail = recipient_arr[4]
+			a_recipient_dict[l_attendee_cn] = [ recipient_mail, recipient_arr[10],]
 
 # main
 if __name__ == '__main__':
@@ -291,6 +292,7 @@ if __name__ == '__main__':
 	logger = logging.getLogger('tcpserver')
 	logger.setLevel('DEBUG')
 
+	logger.info('Début des traitements')
 	parser = argparse.ArgumentParser(description='CSV to ICS')
 	parser.add_argument('--profile')
 	parser.add_argument('--data')
@@ -325,7 +327,7 @@ if __name__ == '__main__':
 			files_recipients_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.itemrecipients.' + item_number + '.iconv')
 			for a_recipient_file in files_recipients_arr:
 				logger.debug('recipients handled:' + a_recipient_file)
-				f_recipient = open(a_recipient_file, 'r')
+				f_recipient = csv.reader(open(a_recipient_file, 'rb'), doublequote=True)
 				for recipient_line in f_recipient:
 					a_export_to_csv.process_recipient(recipient_line, recipient_dict)
 				# if len(recipient_dict) == 0:
@@ -333,10 +335,10 @@ if __name__ == '__main__':
 
 			logger.debug('recipient_dict keys1:<'+'#'.join(recipient_dict.keys())+'>')
 			logger.debug('file handled:' + a_item_file)
-			f_item = open(a_item_file, 'r')
+			f_item = csv.reader(open(a_item_file, 'rb'), doublequote=True)
 			for outlook_line in f_item:
 				l_event = a_export_to_csv.process_item(outlook_line, l_event, recipient_dict, profile_to_process + '@' + domain_to_process)
-			f_item.close()
+			# f_item.close()
 
 			files_recurrences_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.recurrence.*.' + item_number + '.iconv')
 			for a_recurrence_file in files_recurrences_arr:
@@ -344,21 +346,21 @@ if __name__ == '__main__':
 				file_rec_name = basename(a_recurrence_file)
 				recurrence_number = file_rec_name.split('.')[3]
 
-				f_recurrence = open(a_recurrence_file, 'r')
+				f_recurrence = csv.reader(open(a_recurrence_file, 'rb'), doublequote=True)
 				for recurrence_line in f_recurrence:
 					a_export_to_csv.process_recurrence(recurrence_line, l_event, l_tzinfo)
-				f_recurrence.close()
+				# f_recurrence.close()
 
 				files_exceptions_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.exception.*.' + recurrence_number + '.' + item_number + '.iconv')
 				a_date_list_exc = []
 				for a_exception_file in files_exceptions_arr:
 					logger.debug(a_exception_file)
 
-					f_exception = open(a_exception_file, 'r')
+					f_exception = csv.reader(open(a_exception_file, 'rb'), doublequote=True)
 					for exception_line in f_exception:
 						a_export_to_csv.process_exception(exception_line, l_event, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number, recipient_dict, profile_to_process + '@' + domain_to_process)
 						logger.debug('a_date_list_exc len:%s' % len(a_date_list_exc))
-					f_exception.close()
+					# f_exception.close()
 
 				logger.debug('a_date_list_exc final len:%s' % len(a_date_list_exc))
 				if len(a_date_list_exc) != 0:
@@ -379,4 +381,5 @@ if __name__ == '__main__':
 	f = open(os.path.join(data_directory, profile_to_process + '_agendas.ics'), 'wb')
 	f.write(cal.to_ical())
 	f.close()
+	logger.info('Fin des traitements')
 

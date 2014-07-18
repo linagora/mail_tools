@@ -6,34 +6,36 @@
 #########################################################
 
 $rooms = (gc ..\input\rooms.txt) #//This could be done with get-mailbox as well
-$olEXE = "C:\Program Files\Microsoft Office\OFFICE11\OUTLOOK.EXE"
+$olEXE = "C:\Program Files\Microsoft Office\OFFICE12\OUTLOOK.EXE"
 
-if ($args.count > 0)
+if ($args.length -gt 0)
 {
 	$mode_extract = $args[0]
+	Write-Host "..Extraction mode" $mode_extract -ForegroundColor Yellow 
 }
 
 foreach ($a_line in $rooms)
 	{
 		$credentials = $a_line.Split('	')
 		$room = $credentials[0]
-		if ($mode_extract == 'exchange')
+		if ($mode_extract -eq 'exchange')
 		{
 			$password = $credentials[1]
 		}
 		& $olEXE /profile $room
 		sleep (3)
 
-		if ($mode_extract == 'exchange')
+		if ($mode_extract -eq 'exchange')
 		{
 			$wshell = New-Object -ComObject wscript.shell;
-			$wshell.aAppActivate('Mot de passe');
+			$wshell.AppActivate('Mot de passe');
 			sleep(1);
+			$wshell.SendKeys('+{TAB}');
 			$wshell.SendKeys($room);
 			$wshell.SendKeys('{TAB}');
 			$wshell.SendKeys($password);
-			$wshell.SendKeys('{TAB}');
-			$wshell.SendKeys('saintlo.fr');
+			# $wshell.SendKeys('{TAB}');
+			# $wshell.SendKeys('saintlo.fr');
 			$wshell.SendKeys('{ENTER}');
 			sleep(1);
 		}
@@ -56,7 +58,7 @@ foreach ($a_line in $rooms)
 		#read default contacts again and dump to csv
 		Write-Host "..export contacts to csv"
 		$duplicates = $olSession.GetDefaultFolder($contactsFolder).Items
-		$pathToExport = "..\output\" + $room + "\contacts"
+		$pathToExport = "..\output\contacts\" + $room + "\"
 		$fileToExport = $pathToExport + "\contacts.csv"
 		if (!(Test-Path $pathToExport))
 		{
