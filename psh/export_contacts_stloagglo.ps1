@@ -58,7 +58,7 @@ foreach ($a_line in $rooms)
 		#read default contacts again and dump to csv
 		Write-Host "..export contacts to csv"
 		$duplicates = $olSession.GetDefaultFolder($contactsFolder).Items
-		$pathToExport = "..\output\" + $room + "\contacts"
+		$pathToExport = "..\output\contacts\" + $room + "\"
 		$fileToExport = $pathToExport + "\contacts.csv"
 		if (!(Test-Path $pathToExport))
 		{

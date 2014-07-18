@@ -27,7 +27,7 @@ foreach ($a_line in $rooms)
 #//		Add-MailboxPermission -Identity $room -User $currentUser -Accessrights Fullaccess -InheritanceType all -Confirm:$False > $null
 #//		$homeServer = Get-Mailbox $room | select ServerName
 		$newPRF = $mail_tools_home + $room + ".prf"
-		$exportDirectory = "..\output\" + $room + "\"
+		$exportDirectory = "..\output\agendas\" + $room + "\"
 		if (!(Test-Path $exportDirectory))
 		{
 			md -Path $exportDirectory
