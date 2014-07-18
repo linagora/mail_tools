@@ -33,13 +33,13 @@ ServiceEGS=Exchange Global Section
 
 [ServiceEGS]
 MailboxName=%UserName%
-HomeServer=%homeserver%
+HomeServer=MAIL
 
 [Service1]
 OverwriteExistingService=No
 UniqueService=Yes
 MailboxName=%UserName%
-HomeServer=%homeserver%
+HomeServer=MAIL
 AccountName=Microsoft Exchange Server
 
 ;***************************************************************

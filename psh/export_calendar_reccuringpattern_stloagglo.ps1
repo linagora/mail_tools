@@ -8,16 +8,17 @@ $blankPRF = (gc ..\input\calexp.PRF) #//This file is used to create Outlook prof
 $olEXE = "C:\Program Files\Microsoft Office\OFFICE11\OUTLOOK.EXE"
 $mail_tools_home = "C:\Documents and Settings\test\mail_tools\input\"
 
-if ($args.count > 0)
+if ($args.length -gt 0)
 {
 	$mode_extract = $args[0]
+	Write-Host "..Extraction mode" $mode_extract -ForegroundColor Yellow 
 }
 
 foreach ($a_line in $rooms)
 	{
 		$credentials = $a_line.Split('	')
 		$room = $credentials[0]
-		if ($mode_extract == 'exchange')
+		if ($mode_extract -eq 'exchange')
 		{
 			$password = $credentials[1]
 		}
@@ -41,30 +42,35 @@ foreach ($a_line in $rooms)
 		$blankPRF | foreach { $_ -replace "%UserName%", "$room"} | foreach { $_ -replace "calexp", "$room"} | Set-Content $newPRF
 
 #//Start Outlook and import the PRF
-		Write-Host "..importing PRF $newPRF using Outlook"
-		if ($mode_extract == 'exchange')
+		if ($mode_extract -eq 'exchange')
 		{
+			Write-Host "..importing PRF $newPRF using Outlook"
 			& $olEXE /importprf $newPRF /profile $room
 		}
 		else
 		{
+			Write-Host "..using PRF $newPRF using Outlook"
 			& $olEXE /profile $room
 		}
 		sleep (3)
 
-		if ($mode_extract == 'exchange')
+		if ($mode_extract -eq 'exchange')
 		{
 			$wshell = New-Object -ComObject wscript.shell;
-			$wshell.aAppActivate('Mot de passe');
+			$wshell.AppActivate('Mot de passe');
 			sleep(1);
+			$wshell.SendKeys('+{TAB}');
 			$wshell.SendKeys($room);
 			$wshell.SendKeys('{TAB}');
 			$wshell.SendKeys($password);
-			$wshell.SendKeys('{TAB}');
-			$wshell.SendKeys('saintlo.fr');
+			# $wshell.SendKeys('{TAB}');
+			# $wshell.SendKeys('saintlo.fr');
 			$wshell.SendKeys('{ENTER}');
 			sleep(1);
 
+			$wshell.SendKeys('+{TAB}');
+			$wshell.SendKeys($room);
+			$wshell.SendKeys('{TAB}');
 			$wshell.SendKeys($password);
 			$wshell.SendKeys('{ENTER}');
 			sleep(1);
