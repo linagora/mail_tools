@@ -3,6 +3,7 @@
 import glob
 import csv
 import logging, argparse
+import logging.handlers, logging.config
 
 class VCard:
 	def process_contact(self, a_contact_line):
@@ -32,14 +33,19 @@ class VCard:
 # main
 if __name__ == '__main__':
 	FORMAT = '%(asctime)-15s %(message)s'
-	logging.basicConfig(filename='/home/linagora/mail_tools/log/csv2vcf.log', level=logging.DEBUG)
+	logging.basicConfig(format=FORMAT)
+	# logging.basicConfig(filename='/home/linagora/mail_tools/log/csv2vcf.log', level=logging.DEBUG)
 	logger = logging.getLogger('csv2vcf')
-	# logger.setLevel('DEBUG')
+	logger.setLevel(logging.DEBUG)
+
+	a_handler = logging.handlers.TimedRotatingFileHandler(filename='/home/linagora/mail_tools/log/csv2ics.log', when='D')
+	logger.addHandler(a_handler)
 
 	parser = argparse.ArgumentParser(description='CSV to VCF')
 	parser.add_argument('--profile')
 	parser.add_argument('--data')
 	parser.add_argument('--output')
+	parser.add_argument('--import_dir')
 	args = parser.parse_args()
 
 	logger.info('Début des traitements ...')
@@ -47,8 +53,9 @@ if __name__ == '__main__':
 	profile_to_process=args.profile
 	data_directory=args.data
 	output_directory=args.output
+	import_directory=args.import_dir
 	files_contacts_arr = glob.glob(data_directory + '/' + 'contacts.csv.iconv')
-	f_contacts_output = open(output_directory + '/' + profile_to_process + '_contacts.vcf', 'w')
+	f_contacts_output = open(import_directory + '/' + profile_to_process + '_contacts.vcf', 'w')
 
 	logger.debug(data_directory + '/' + profile_to_process + '_contacts.csv.iconv')
 	a_vcard = VCard()

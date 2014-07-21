@@ -5,6 +5,7 @@ import pytz
 import csv
 from datetime import datetime
 import logging
+import logging.handlers, logging.config
 import argparse
 import tempfile, os
 
@@ -293,10 +294,14 @@ class ExportToCsv:
 # main
 if __name__ == '__main__':
 	FORMAT = '%(asctime)-15s %(message)s'
-	# logging.basicConfig(format=FORMAT)
-	logging.basicConfig(filename='/home/linagora/mail_tools/log/csv2ics.log', level=logging.DEBUG)
+	logging.basicConfig(format=FORMAT)
+	# logging.basicConfig(filename='/home/linagora/mail_tools/log/csv2ics.log', level=logging.DEBUG)
+	# loggin.config.fileConfig('/home/linagora/mail_tools/conf/logging.conf')
 	logger = logging.getLogger('csv2ics')
-	logger.setLevel('DEBUG')
+	logger.setLevel(logging.DEBUG)
+
+	a_handler = logging.handlers.TimedRotatingFileHandler(filename='/home/linagora/mail_tools/log/csv2ics.log', when='D')
+	logger.addHandler(a_handler)
 
 	logger.info('Début des traitements')
 	parser = argparse.ArgumentParser(description='CSV to ICS')

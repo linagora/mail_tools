@@ -6,12 +6,13 @@ PROFILE_DATA="${OBM_SCRIPTS}/output/agendas/${profil}"
 DATA_TO_IMPORT="${OBM_SCRIPTS}/import/agendas/${profil}"
 DOMAIN_TO_PROCESS="saint-lo.fr"
 
-rm ${PROFILE_DATA}/*.iconv 2> /dev/null
-
 if  ! [[ -d "${DATA_TO_IMPORT}" ]];
 then
 	mkdir -p ${DATA_TO_IMPORT}
 fi
+
+# suppress previous processing
+rm ${PROFILE_DATA}/*.iconv ${DATA_TO_IMPORT}/*.vcf 2> /dev/null
 
 for i in `find ${PROFILE_DATA} -type f`
 do
