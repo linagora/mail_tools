@@ -18,21 +18,22 @@ LOG_FILE=${WORK_FOLDER}"/log/users_"${timestamp}".log"
 
 while read user_stlo pwd_stlo
 do
-	LOGIN_USER=${user_stlo}"@saint-lo.fr"
+	LOGIN_USER=`echo ${user_stlo} | cut -f1 -d@`"@saint-lo.fr"
 
 	echo "Traitement de la boite ${user_stlo}" >> ${LOG_FILE}
 
 	/usr/bin/imapsync \
-	--host1 $host_from --password1 ${pwd_stlo} --user1 ${user_stlo} \
+	--host1 $host_from --password1 "${pwd_stlo}" --user1 ${user_stlo} \
         --host2 $host_to --user2  ${LOGIN_USER} \
 	--subscribe_all \
 	--exclude "Calendrier|Contacts|Journal|Notes|T\&AOI-ches|Bo\&AO4-te\ d\'envoi" \
 	--exclude "Dossiers\ publics" \
+	--regextrans2 "s/^INBOX\///" \
 	--regextrans2 "s/Brouillons/Drafts/" \
 	--regextrans2 "s/\&AMk-l\&AOk-ments envoy\&AOk-s/Sent/" \
 	--regextrans2 "s/\&AMk-l\&AOk-ments supprim\&AOk-s/Trash/" \
 	--addheader \
-	--password2 ${pwd_stlo} >> ${LOG_FILE}
+	--password2 "${pwd_stlo}" >> ${LOG_FILE}
 
 	if [ $? -eq 1 ];
 	then

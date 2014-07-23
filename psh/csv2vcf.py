@@ -11,10 +11,12 @@ class VCard:
 		line_len=len(a_contact_line)
 		a_vcf_card = 'BEGIN:VCARD'
 		contact_arr = a_contact_line
+		logger.debug('a_contact_line:'+','.join(a_contact_line))
 		# Tel [45]
 		a_vcf_card = a_vcf_card + '\nVERSION:3.0'
 		a_vcf_card = a_vcf_card + '\nN:'+contact_arr[27]
-		a_vcf_card = a_vcf_card + '\nFN:'+contact_arr[69].split(', ')[0]+';'+contact_arr[69].split(', ')[1]
+		if contact_arr[69].find(', ') != -1:
+			a_vcf_card = a_vcf_card + '\nFN:'+contact_arr[69].split(', ')[0]+';'+contact_arr[69].split(', ')[1]
 		a_vcf_card = a_vcf_card + '\nORG:'+contact_arr[53]
 		a_vcf_card = a_vcf_card + '\nTITLE:'+contact_arr[134]
 		for a_work_tel in contact_arr[45].split(';'):
@@ -38,7 +40,7 @@ if __name__ == '__main__':
 	logger = logging.getLogger('csv2vcf')
 	logger.setLevel(logging.DEBUG)
 
-	a_handler = logging.handlers.TimedRotatingFileHandler(filename='/home/linagora/mail_tools/log/csv2ics.log', when='D')
+	a_handler = logging.handlers.TimedRotatingFileHandler(filename='/home/linagora/mail_tools/log/csv2vcf.log', when='D')
 	logger.addHandler(a_handler)
 
 	parser = argparse.ArgumentParser(description='CSV to VCF')
@@ -65,6 +67,6 @@ if __name__ == '__main__':
 
 		for a_contact_line in f_contacts:
 			logger.debug('a_contact_line:'+a_contact_line[0])
-			a_vcard_line = a_vcard.process_contact(a_contact_line)
+			a_vcard_line = a_vcard.process_contact(a_contact_line).replace('\r\n', ' ')
 			f_contacts_output.write(a_vcard_line)
-		
+	logger.info('Fin des traitements ...')

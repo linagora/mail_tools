@@ -24,6 +24,17 @@ class EmailEmpty(Exception):
 		return repr(self.value)
 
 class ExportToCsv:
+	def load_virtual_alias(self, a_virtual_alias_dict):
+		logger.debug('load_virtual_alias')
+		f_virtual_alias = open('/etc/postfix/virtual_alias', 'r')
+		for alias_line in f_virtual_alias:
+			logger.debug('alias_line:'+alias_line)
+			alias_line_arr = alias_line.rstrip('\n').split('\t')
+			logger.debug('alias_line_arr[0]:'+alias_line_arr[0])
+			logger.debug('alias_line_arr[1]:'+alias_line_arr[1])
+			a_virtual_alias_dict[alias_line_arr[1]] = alias_line_arr[0]
+		f_virtual_alias.close()
+		
 	def split_outlook_date(self, a_outlook_date):
 		logger.debug('split_outlook_date:'+a_outlook_date)
 		date_without_quote = a_outlook_date
@@ -37,7 +48,7 @@ class ExportToCsv:
 
 		return int(a_day_arr[0]), int(a_day_arr[1]), int(a_day_arr[2]), int(a_hour_arr[0]), int(a_hour_arr[1]), int(a_hour_arr[2]) 
 
-	def deal_event(self, a_event_arr, a_tzinfo, a_recipient_dict, a_email_organizer):
+	def deal_event(self, a_event_arr, a_tzinfo, a_recipient_dict, a_virtual_alias_dict, a_email_organizer):
 		logger.debug('deal_event')
 		event = Event()
 
@@ -56,7 +67,7 @@ class ExportToCsv:
 		# event.add('dtstamp', datetime(2005, 4, 4, 0, 10, 0, tzinfo=pytz.utc))
 
 		organizer_field = a_event_arr[43]
-		organizer=self.get_cal_address(organizer_field, a_recipient_dict, a_email_organizer)
+		organizer=self.get_cal_address(organizer_field, a_recipient_dict, a_virtual_alias_dict, a_email_organizer)
 		organizer.params['role'] = vText('CHAIR')
 
 		event['organizer'] = organizer
@@ -80,7 +91,7 @@ class ExportToCsv:
 
 		for a_required in required_attendees:
 			logger.debug('for a_required:' + a_required)
-			a_cal_required_attendee = self.get_cal_address(a_required, a_recipient_dict)
+			a_cal_required_attendee = self.get_cal_address(a_required, a_recipient_dict, a_virtual_alias_dict)
 			a_cal_required_attendee.params['ROLE'] = vText('REQ-PARTICIPANT')
 			# TO FINISH
 			# a_cal_required_attendee.params['PARTSTAT'] = vText('ACCEPTED')
@@ -95,7 +106,7 @@ class ExportToCsv:
 
 		for a_optional in optional_attendees:
 			logger.debug('for a_optional:' + a_optional)
-			a_cal_optional_attendee = self.get_cal_address(a_optional, a_recipient_dict)
+			a_cal_optional_attendee = self.get_cal_address(a_optional, a_recipient_dict, a_virtual_alias_dict)
 			a_cal_optional_attendee.params['ROLE'] = vText('OPT-PARTICIPANT')
 			# TO FINISH
 			# a_cal_optional_attendee.params['PARTSTAT'] = vText('ACCEPTED')
@@ -115,27 +126,27 @@ class ExportToCsv:
 				recurrence_dayofweek = recurrence_dayofweek - int(i)
 		return list_of_days
 
-	def process_appointment(self, a_appointment_line, a_event, a_moved_event_list, a_tzinfo, a_recipient_dict, email_organizer, a_orig_time_exception):
+	def process_appointment(self, a_appointment_line, a_event, a_moved_event_list, a_tzinfo, a_recipient_dict, a_virtual_alias_dict, email_organizer, a_orig_time_exception):
 		if len(a_appointment_line) > 1:
 			a_appointment_arr = a_appointment_line
-			a_moved_event = self.deal_event(a_appointment_arr, a_tzinfo, a_recipient_dict, email_organizer)
+			a_moved_event = self.deal_event(a_appointment_arr, a_tzinfo, a_recipient_dict, a_virtual_alias_dict, email_organizer)
 			# a_day, a_month, a_year, a_hour, a_minute, a_second = self.split_outlook_date(a_event_arr[33])
 			a_day, a_month, a_year, a_hour, a_minute, a_second = self.split_outlook_date(a_orig_time_exception)
 			a_moved_event.add('recurrence-id', datetime(a_year, a_month, a_day, a_hour, a_minute, a_second, tzinfo=pytz.timezone(a_tzinfo)))
 			a_moved_event_list.append(a_moved_event)
 
-	def create_moved_event(self, l_event, a_recurrence_number, a_item_number, a_tzinfo, a_recipient_dict, a_orig_time_exception, email_organizer):
+	def create_moved_event(self, l_event, a_recurrence_number, a_item_number, a_tzinfo, a_recipient_dict, a_virtual_alias_dict, a_orig_time_exception, email_organizer):
 		a_moved_event_list = []
 		
 		files_appointement_arr = glob.glob(data_directory + '/' + profile_to_process + '.csv.appointmentitem.*.' + recurrence_number + '.' + item_number + '.iconv')
 		for file_appointment in files_appointement_arr:
 			f_appointment = csv.reader(open(file_appointment, 'rb'), doublequote=True)
 			for appointment_line in f_appointment:
-				self.process_appointment(appointment_line, l_event, a_moved_event_list, a_tzinfo, a_recipient_dict, email_organizer, a_orig_time_exception)
+				self.process_appointment(appointment_line, l_event, a_moved_event_list, a_tzinfo, a_recipient_dict, a_virtual_alias_dict, email_organizer, a_orig_time_exception)
 			# f_appointment.close()
 		return a_moved_event_list[0]
 
-	def process_exception(self, exception_line, l_event, l_tzinfo, a_date_list_exc, moved_events_list, a_recurrence_number, a_item_number, a_recipient_dict, email_organizer):
+	def process_exception(self, exception_line, l_event, l_tzinfo, a_date_list_exc, moved_events_list, a_recurrence_number, a_item_number, a_recipient_dict, a_virtual_alias_dict, email_organizer):
 		logger.debug('process_exception')
 		logger.debug(exception_line)
 		line_len=len(exception_line)
@@ -150,7 +161,7 @@ class ExportToCsv:
 			else:
 				logger.debug('is_not_deleted:'+','.join(exception_line))
 				orig_time_exception = exception_arr[6]
-				a_moved_event = self.create_moved_event(l_event, a_recurrence_number, a_item_number, l_tzinfo, a_recipient_dict, orig_time_exception,  email_organizer)
+				a_moved_event = self.create_moved_event(l_event, a_recurrence_number, a_item_number, l_tzinfo, a_recipient_dict, a_virtual_alias_dict, orig_time_exception,  email_organizer)
 				moved_events_list.append(a_moved_event)
 
 	def process_recurrence(self, recurrence_line, l_event, a_tzinfo):
@@ -210,13 +221,13 @@ class ExportToCsv:
 
 			l_event.add('rrule', rec_dict)
 
-	def process_item(self, outlook_line, l_event, a_recipient_dict, a_email_organizer):
+	def process_item(self, outlook_line, l_event, a_recipient_dict, a_virtual_alias_dict, a_email_organizer):
 		logger.debug('process_item')
 		line_len=len(outlook_line)
 
 		if (line_len > 1):
 			event_arr = outlook_line
-			l_event = self.deal_event(event_arr, l_tzinfo, a_recipient_dict, a_email_organizer)
+			l_event = self.deal_event(event_arr, l_tzinfo, a_recipient_dict, a_virtual_alias_dict, a_email_organizer)
 			is_recurring = event_arr[35]
 
 	#		is_recurring = event_arr[35]
@@ -234,9 +245,10 @@ class ExportToCsv:
 	#				l_event = deal_event(event_arr, l_tzinfo)
 		return l_event, is_recurring
 
-	def get_cal_address(self, a_address, a_recipient_dict, e_mail=None):
+	def get_cal_address(self, a_address, a_recipient_dict, a_virtual_alias_dict, e_mail=None):
 		logger.debug('get_cal_address')
 		logger.debug('a_address:'+a_address)
+		logger.debug('a_virtual_alias_dict keys:<'+'#'.join(a_virtual_alias_dict.keys())+'>')
 		# l_attendee_email = a_address[a_address.rfind('('):a_address.rfind(')')]
 
 		if (a_address == ''):
@@ -250,11 +262,31 @@ class ExportToCsv:
 		logger.debug('l_attendee_cn:<'+l_attendee_cn+'>')
 		logger.debug('recipient_dict keys:<'+'#'.join(a_recipient_dict.keys())+'>')
 		a_part_stat = ''
+		l_attendee_email = ''
 
 		if l_attendee_cn == '':
 			raise NameEmpty(a_address)
 		if l_attendee_cn in a_recipient_dict:
-			l_attendee_email = a_recipient_dict[l_attendee_cn][0]
+			# l_attendee_email = a_recipient_dict[l_attendee_cn][0]
+			# si le mail inclut le caractere @, c'est un mail qui sera garde
+			# sinon c'est un DN. Le traitement recupere le CN en fin de chaine puis ajoute le domaine '@saint-lo.fr'
+			l_attendee_email_to_process = a_recipient_dict[l_attendee_cn][0]
+			logger.debug('l_attendee_email_to_process:<'+l_attendee_email_to_process+'>')
+			if (l_attendee_email_to_process.find('@') == -1):
+				# recuperation du CN en fin de chaine
+				if (l_attendee_email_to_process.rfind('CN=') != -1):
+					l_attendee_email_logindomain = l_attendee_email_to_process[l_attendee_email_to_process.rfind('CN=')+3:]+'@'+domain_to_process
+					l_attendee_email_logindomain_low = l_attendee_email_logindomain.lower()
+				else:
+					l_attendee_email_logindomain_low = l_attendee_email_to_process.lower() + '@' + domain_to_process
+			else:
+				l_attendee_email_logindomain_low = l_attendee_email_to_process.lower()
+		
+			if l_attendee_email_logindomain_low in a_virtual_alias_dict:
+				l_attendee_email = a_virtual_alias_dict[l_attendee_email_logindomain_low]
+			else:
+				l_attendee_email = l_attendee_email_logindomain_low
+
 			if (a_recipient_dict[l_attendee_cn][1] == '0') or (a_recipient_dict[l_attendee_cn][1] == '3') or (a_recipient_dict[l_attendee_cn][1] == '1'):
 				a_part_stat = 'ACCEPTED'
 			elif (a_recipient_dict[l_attendee_cn][1] == '4'):
@@ -272,7 +304,7 @@ class ExportToCsv:
 		return l_attendee
 
 	def process_recipient(self, a_recipient_line, a_recipient_dict):
-		logger.debug('process_recipient:'+a_recipient_line)
+		logger.debug('process_recipient:'+','.join(a_recipient_line))
 
 		if (len(a_recipient_line) > 1):
 			recipient_arr = a_recipient_line
@@ -322,6 +354,9 @@ if __name__ == '__main__':
 	line_number = 0
 	l_tzinfo="Europe/Paris"
 	a_export_to_csv = ExportToCsv()
+	virtual_alias_dict = dict()
+	a_export_to_csv.load_virtual_alias(virtual_alias_dict)
+	logger.debug('virtual_alias_dict keys:<'+'#'.join(virtual_alias_dict.keys())+'>')
 
 	import glob
 	from os.path import basename
@@ -351,7 +386,7 @@ if __name__ == '__main__':
 			logger.debug('file handled:' + a_item_file)
 			f_item = csv.reader(open(a_item_file, 'rb'), doublequote=True)
 			for outlook_line in f_item:
-				l_event, is_recurring = a_export_to_csv.process_item(outlook_line, l_event, recipient_dict, profile_to_process + '@' + domain_to_process)
+				l_event, is_recurring = a_export_to_csv.process_item(outlook_line, l_event, recipient_dict, virtual_alias_dict, profile_to_process + '@' + domain_to_process)
 			# f_item.close()
 
 			if is_recurring == "True":
@@ -373,7 +408,7 @@ if __name__ == '__main__':
 
 						f_exception = csv.reader(open(a_exception_file, 'rb'), doublequote=True)
 						for exception_line in f_exception:
-							a_export_to_csv.process_exception(exception_line, l_event, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number, recipient_dict, profile_to_process + '@' + domain_to_process)
+							a_export_to_csv.process_exception(exception_line, l_event, l_tzinfo, a_date_list_exc, moved_events, recurrence_number, item_number, recipient_dict, virtual_alias_dict, profile_to_process + '@' + domain_to_process)
 							logger.debug('a_date_list_exc len:%s' % len(a_date_list_exc))
 						# f_exception.close()
 
