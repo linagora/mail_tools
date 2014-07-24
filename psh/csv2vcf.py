@@ -2,6 +2,7 @@
 
 import glob
 import csv
+import codecs
 import logging, argparse
 import logging.handlers, logging.config
 
@@ -11,18 +12,24 @@ class VCard:
 		line_len=len(a_contact_line)
 		a_vcf_card = 'BEGIN:VCARD'
 		contact_arr = a_contact_line
-		logger.debug('a_contact_line:'+','.join(a_contact_line))
+		logger.debug('a_contact_line:'+'#'.join(a_contact_line))
 		# Tel [45]
 		a_vcf_card = a_vcf_card + '\nVERSION:3.0'
 		a_vcf_card = a_vcf_card + '\nN:'+contact_arr[27]
 		if contact_arr[69].find(', ') != -1:
 			a_vcf_card = a_vcf_card + '\nFN:'+contact_arr[69].split(', ')[0]+';'+contact_arr[69].split(', ')[1]
-		a_vcf_card = a_vcf_card + '\nORG:'+contact_arr[53]
+		a_vcf_card = a_vcf_card + '\nROLE:'+contact_arr[90]
+		a_vcf_card = a_vcf_card + '\nX-OBM-COMPANY:'+contact_arr[53]
 		a_vcf_card = a_vcf_card + '\nTITLE:'+contact_arr[134]
 		for a_work_tel in contact_arr[45].split(';'):
 			a_vcf_card = a_vcf_card + '\nTEL;TYPE=WORK,VOICE:'+a_work_tel
 		for a_home_tel in contact_arr[86].split(';'):
 			a_vcf_card = a_vcf_card + '\nTEL;TYPE=HOME,VOICE:'+a_home_tel
+		for a_cell_tel in contact_arr[109].split(';'):
+			a_vcf_card = a_vcf_card + '\nTEL;TYPE=CELL,VOICE:'+a_cell_tel
+		for a_work_fax in contact_arr[43].split(';'):
+			a_vcf_card = a_vcf_card + '\nTEL;TYPE=WORK,FAX:'+a_work_fax
+		a_vcf_card = a_vcf_card + '\nX-OBM-COMMENT:'+contact_arr[7]
 		a_vcf_card = a_vcf_card + '\nADR;TYPE=WORK:'+contact_arr[39]+';;'+contact_arr[42]+';'+contact_arr[37]+';;'+contact_arr[39]+';'+contact_arr[38]
 		a_vcf_card = a_vcf_card + '\nLABEL;TYPE=WORK:'+contact_arr[39]+';;'+contact_arr[42]+';'+contact_arr[37]+';;'+contact_arr[39]+';'+contact_arr[80]
 		a_vcf_card = a_vcf_card + '\nADR;TYPE=HOME:'+contact_arr[81]+';;'+contact_arr[84]+';'+contact_arr[79]+';;'+contact_arr[81]+';'+contact_arr[80]
