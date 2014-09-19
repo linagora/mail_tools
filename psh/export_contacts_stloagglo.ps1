@@ -66,6 +66,36 @@ foreach ($a_line in $rooms)
 		}
 		$duplicates | Export-Csv $fileToExport -encoding "Unicode"
 
+		$item_num = 0
+
+		foreach($rec in $duplicates)
+		{
+			$type_name = $rec.MessageClass
+			Write-Host $type_name
+			if ($type_name -eq "IPM.DistList")
+			{
+				Write-Host $rec.MemberCount
+				$member_num = 1
+
+				$dist_list_name = $fileToExport + "." + $item_num + "." + $rec.ConversationTopic.replace(' ', '_')
+				while($member_num -le $rec.MemberCount)
+				{
+					$filename_to_use = $dist_list_name + "." + $member_num + ".list"
+					$rec.GetMember($member_num) | Export-Csv $filename_to_use -encoding "Unicode" 
+					$member_num = $member_num + 1
+				}
+
+			}
+			elseif ($type_name -eq "IPM.Contact")
+			{
+				$filename_properties = $fileToExport +  "." + $item_num + ".properties"
+				$rec.ItemProperties |  Export-Csv $filename_properties -encoding "Unicode" 
+			}
+			
+			$item_num = $item_num + 1
+		}
+
+
 #delete all contacts left in default contacts folder
 #Foreach ($duplicate in $duplicates){
 #$duplicate.Delete() | foreach-object {Write-Progress "Deleting duplicate..." $_.FullName; $_.FullName} | Out-Null
