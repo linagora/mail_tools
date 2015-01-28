@@ -273,6 +273,11 @@ class ExportToCsv:
 			# sinon c'est un DN. Le traitement recupere le CN en fin de chaine puis ajoute le domaine '@saint-lo.fr'
 			l_attendee_email_to_process = a_recipient_dict[l_attendee_cn][0]
 			logger.debug('l_attendee_email_to_process:<'+l_attendee_email_to_process+'>')
+
+			# si le mail n'est pas dans la liste des recipients, renvoie None
+			if l_attendee_email_to_process == '':
+				return None
+
 			if (l_attendee_email_to_process.find('@') == -1):
 				# recuperation du CN en fin de chaine
 				if (l_attendee_email_to_process.rfind('CN=') != -1):
