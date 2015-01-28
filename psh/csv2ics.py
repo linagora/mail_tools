@@ -92,12 +92,13 @@ class ExportToCsv:
 		for a_required in required_attendees:
 			logger.debug('for a_required:' + a_required)
 			a_cal_required_attendee = self.get_cal_address(a_required, a_recipient_dict, a_virtual_alias_dict)
-			a_cal_required_attendee.params['ROLE'] = vText('REQ-PARTICIPANT')
-			# TO FINISH
-			# a_cal_required_attendee.params['PARTSTAT'] = vText('ACCEPTED')
-			a_cal_required_attendee.params['CUTYPE'] = vText('INDIVIDUAL')
-			# TO FINISH
-			event.add('attendee', a_cal_required_attendee, encode=0)
+			if a_cal_required_attendee is not None:
+				a_cal_required_attendee.params['ROLE'] = vText('REQ-PARTICIPANT')
+				# TO FINISH
+				# a_cal_required_attendee.params['PARTSTAT'] = vText('ACCEPTED')
+				a_cal_required_attendee.params['CUTYPE'] = vText('INDIVIDUAL')
+				# TO FINISH
+				event.add('attendee', a_cal_required_attendee, encode=0)
 
 		optional_attendees = []
 		if a_event_arr[42]  != '':
@@ -297,9 +298,11 @@ class ExportToCsv:
 			l_attendee_email = e_mail
 			a_part_stat = 'ACCEPTED'
 
-		l_attendee = vCalAddress('MAILTO:'+l_attendee_email)
-		l_attendee.params['cn'] = vText(l_attendee_cn)
-		l_attendee.params['PARTSTAT'] = vText(a_part_stat)
+		l_attendee = None
+		if l_attendee_email is not None:
+			l_attendee = vCalAddress('MAILTO:'+l_attendee_email.strip("'"))
+			l_attendee.params['cn'] = vText(l_attendee_cn)
+			l_attendee.params['PARTSTAT'] = vText(a_part_stat)
 
 		return l_attendee
 
