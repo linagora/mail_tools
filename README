@@ -1,0 +1,20 @@
+Relation des objets generes
+---------------------------
+
+* Each appointment in the calendar generates a file named: <profile_name>.csv.item.<item_number>
+* For each item generated, a file with all the item recipients is linked: <profile_name>.csv.itemrecipients.<item_number>
+
+* If the event is a recurring one, the event is linked with its recurrences through the <profile_name>.csv.recurrence.<recurrence_number>.<item_number> file.
+* Each recurrence may have exceptions. In this case, a <profile_name>.csv.exception.<exception_number>.<recurrence_number>.<item_number> file is generated.
+* If the exception is a move, the moved occurence is written in <profile_name>.csv.appointement.<exception_number>.<recurrence_number>.<item_number> file.
+
+Finally, the file hierarchy is:
+	<profile_name>.csv.itemrecipients.<item_number>
+	<profile_name>.csv.item.<item_number>
+		|
+		|___ <profile_name>.csv.recurrence.<recurrence_number>.<item_number>
+			|
+			|__ <profile_name>.csv.exception.<exception_number>.<recurrence_number>.<item_number> 
+				|
+				|__ <profile_name>.csv.appointement.<exception_number>.<recurrence_number>.<item_number> 
+

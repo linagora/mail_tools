@@ -108,12 +108,13 @@ class ExportToCsv:
 		for a_optional in optional_attendees:
 			logger.debug('for a_optional:' + a_optional)
 			a_cal_optional_attendee = self.get_cal_address(a_optional, a_recipient_dict, a_virtual_alias_dict)
-			a_cal_optional_attendee.params['ROLE'] = vText('OPT-PARTICIPANT')
-			# TO FINISH
-			# a_cal_optional_attendee.params['PARTSTAT'] = vText('ACCEPTED')
-			a_cal_optional_attendee.params['CUTYPE'] = vText('INDIVIDUAL')
-			# TO FINISH
-			event.add('attendee', a_cal_optional_attendee, encode=0)
+			if a_cal_optional_attendee is not None:
+				a_cal_optional_attendee.params['ROLE'] = vText('OPT-PARTICIPANT')
+				# TO FINISH
+				# a_cal_optional_attendee.params['PARTSTAT'] = vText('ACCEPTED')
+				a_cal_optional_attendee.params['CUTYPE'] = vText('INDIVIDUAL')
+				# TO FINISH
+				event.add('attendee', a_cal_optional_attendee, encode=0)
 
 		return event
 
@@ -275,30 +276,38 @@ class ExportToCsv:
 			logger.debug('l_attendee_email_to_process:<'+l_attendee_email_to_process+'>')
 
 			# si le mail n'est pas dans la liste des recipients, renvoie None
-			if l_attendee_email_to_process == '':
+			# si l organisateur n a pas de mail dans la liste des recipients, l'owner du calendrier devient l 'organisateur
+			if e_mail is not None:
+				logger.debug('e_mail:<'+e_mail+'>')
+
+			if l_attendee_email_to_process == '' and e_mail is None:
 				return None
-
-			if (l_attendee_email_to_process.find('@') == -1):
-				# recuperation du CN en fin de chaine
-				if (l_attendee_email_to_process.rfind('CN=') != -1):
-					l_attendee_email_logindomain = l_attendee_email_to_process[l_attendee_email_to_process.rfind('CN=')+3:]+'@'+domain_to_process
-					l_attendee_email_logindomain_low = l_attendee_email_logindomain.lower()
+			elif l_attendee_email_to_process != '':
+				if (l_attendee_email_to_process.find('@') == -1):
+					# recuperation du CN en fin de chaine
+					if (l_attendee_email_to_process.rfind('CN=') != -1):
+						l_attendee_email_logindomain = l_attendee_email_to_process[l_attendee_email_to_process.rfind('CN=')+3:]+'@'+domain_to_process
+						l_attendee_email_logindomain_low = l_attendee_email_logindomain.lower()
+					else:
+						l_attendee_email_logindomain_low = l_attendee_email_to_process.lower() + '@' + domain_to_process
 				else:
-					l_attendee_email_logindomain_low = l_attendee_email_to_process.lower() + '@' + domain_to_process
-			else:
-				l_attendee_email_logindomain_low = l_attendee_email_to_process.lower()
-		
-			if l_attendee_email_logindomain_low in a_virtual_alias_dict:
-				l_attendee_email = a_virtual_alias_dict[l_attendee_email_logindomain_low]
-			else:
-				l_attendee_email = l_attendee_email_logindomain_low
+					l_attendee_email_logindomain_low = l_attendee_email_to_process.lower()
+			
+				if l_attendee_email_logindomain_low in a_virtual_alias_dict:
+					l_attendee_email = a_virtual_alias_dict[l_attendee_email_logindomain_low]
+				else:
+					l_attendee_email = l_attendee_email_logindomain_low
 
-			if (a_recipient_dict[l_attendee_cn][1] == '0') or (a_recipient_dict[l_attendee_cn][1] == '3') or (a_recipient_dict[l_attendee_cn][1] == '1'):
+				if (a_recipient_dict[l_attendee_cn][1] == '0') or (a_recipient_dict[l_attendee_cn][1] == '3') or (a_recipient_dict[l_attendee_cn][1] == '1'):
+					a_part_stat = 'ACCEPTED'
+				elif (a_recipient_dict[l_attendee_cn][1] == '4'):
+					a_part_stat = 'DECLINED'
+				elif (a_recipient_dict[l_attendee_cn][1] == '2'):
+					a_part_stat = 'TENTATIVE'
+			elif e_mail is not None:
+				l_attendee_email = e_mail
 				a_part_stat = 'ACCEPTED'
-			elif (a_recipient_dict[l_attendee_cn][1] == '4'):
-				a_part_stat = 'DECLINED'
-			elif (a_recipient_dict[l_attendee_cn][1] == '2'):
-				a_part_stat = 'TENTATIVE'
+
 		else:
 			l_attendee_email = e_mail
 			a_part_stat = 'ACCEPTED'
