@@ -15,9 +15,9 @@ class VCard:
 		logger.debug('a_contact_line:'+'#'.join(a_contact_line))
 		# Tel [45]
 		a_vcf_card = a_vcf_card + '\nVERSION:3.0'
-		a_vcf_card = a_vcf_card + '\nN:'+contact_arr[27]
+		a_vcf_card = a_vcf_card + '\nN:'+contact_arr[27].replace('\n', ' ')
 		if contact_arr[69].find(', ') != -1:
-			a_vcf_card = a_vcf_card + '\nFN:'+contact_arr[69].split(', ')[0]+';'+contact_arr[69].split(', ')[1]
+			a_vcf_card = a_vcf_card + '\nFN:'+contact_arr[69].split(', ')[0].replace('\n', ' ')+';'+contact_arr[69].split(', ')[1].replace('\n', ' ')
 		a_vcf_card = a_vcf_card + '\nROLE:'+contact_arr[90]
 		a_vcf_card = a_vcf_card + '\nX-OBM-COMPANY:'+contact_arr[53]
 		a_vcf_card = a_vcf_card + '\nTITLE:'+contact_arr[134]
@@ -56,14 +56,14 @@ class VCard:
 		logger.debug('a_contact_line:'+'#'.join(a_contact_line))
 		# Tel [45]
 		a_vcf_card = a_vcf_card + '\nVERSION:3.0'
-		a_vcf_card = a_vcf_card + '\nN:'+contact_arr[27]
+		a_vcf_card = a_vcf_card + '\nN:'+contact_arr[27].replace('\n', ' ')
 		vcf_dict = dict()
 		self.load_vcf_dict(vcf_dict, a_item_num)
 		for a_key in vcf_dict.keys():
 			logger.debug('Key:'+a_key+'@'+vcf_dict[a_key])
 
 		if vcf_dict['FileAs'].find(', ') != -1:
-			a_vcf_card = a_vcf_card + '\nFN:'+vcf_dict['FileAs'].split(', ')[0]+';'+vcf_dict['FileAs'].split(', ')[1]
+			a_vcf_card = a_vcf_card + '\nFN:'+vcf_dict['FileAs'].split(', ')[0].replace('\n', ' ')+';'+vcf_dict['FileAs'].split(', ')[1].replace('\n', ' ')
 		a_vcf_card = a_vcf_card + '\nROLE:'+vcf_dict['JobTitle']
 		a_vcf_card = a_vcf_card + '\nX-OBM-COMPANY:'+vcf_dict['CompanyName']
 		a_vcf_card = a_vcf_card + '\nTITLE:'+vcf_dict['Title']
