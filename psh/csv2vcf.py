@@ -124,10 +124,10 @@ if __name__ == '__main__':
 			# the number of fields indicates which function to call
 			# different users may have different number of records in the extraction
 			if a_contact_line[19] == 'IPM.Contact' and len(a_contact_line) == 169:
-				a_vcard_line = a_vcard.process_contact(a_contact_line).replace('\r\n', ' ')
+				a_vcard_line = a_vcard.process_contact(a_contact_line).replace('\r\n', ' ').replace('\r', '\\n')
 				f_contacts_output.write(a_vcard_line)
 			elif a_contact_line[19] == 'IPM.Contact' and len(a_contact_line) == 54:
-				a_vcard_line = a_vcard.process_contact_without_version(a_contact_line, item_num).replace('\r\n', ' ')
+				a_vcard_line = a_vcard.process_contact_without_version(a_contact_line, item_num).replace('\r\n', ' ').replace('\r', '\\n')
 				f_contacts_output.write(a_vcard_line)
 			elif a_contact_line[19] == 'IPM.DistList':
 				logger.debug('IPM.DistList')
