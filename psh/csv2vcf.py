@@ -12,6 +12,8 @@ class VCard:
 		line_len=len(a_contact_line)
 		a_vcf_card = 'BEGIN:VCARD'
 		contact_arr = a_contact_line
+		for (i, a_field) in enumerate(contact_arr):
+			contact_arr[i] = a_field.replace('\r\n', ' ').replace('\n', ' ')
 		logger.debug('a_contact_line:'+'#'.join(a_contact_line))
 		# Tel [45]
 		a_vcf_card = a_vcf_card + '\nVERSION:3.0'
@@ -53,6 +55,8 @@ class VCard:
 		line_len=len(a_contact_line)
 		a_vcf_card = 'BEGIN:VCARD'
 		contact_arr = a_contact_line
+		for (i, a_field) in enumerate(contact_arr):
+			contact_arr[i] = a_field.replace('\n', ' ').replace('\r\n', ' ')
 		logger.debug('a_contact_line:'+'#'.join(a_contact_line))
 		# Tel [45]
 		a_vcf_card = a_vcf_card + '\nVERSION:3.0'
