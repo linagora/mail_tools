@@ -37,7 +37,10 @@ class VCard:
 		a_vcf_card = a_vcf_card + '\nADR;TYPE=HOME:'+contact_arr[81]+';;'+contact_arr[84]+';'+contact_arr[79]+';;'+contact_arr[81]+';'+contact_arr[80]
 		a_vcf_card = a_vcf_card + '\nLABEL;TYPE=HOME:'+contact_arr[81]+';;'+contact_arr[84]+';'+contact_arr[79]+';;'+contact_arr[81]+';'+contact_arr[38]
 		a_address = contact_arr[59]
-		a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:a_address.rfind(')')]
+		if a_address.rfind(')') != -1:
+			a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:a_address.rfind(')')]
+		else:
+			a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:]
 		a_vcf_card = a_vcf_card + '\nEND:VCARD\n'
 		return a_vcf_card
 
@@ -85,7 +88,10 @@ class VCard:
 		a_vcf_card = a_vcf_card + '\nADR;TYPE=HOME:'+vcf_dict['HomeAddressPostalCode']+';;'+vcf_dict['HomeAddressStreet']+';'+vcf_dict['HomeAddressCity']+';;'+vcf_dict['HomeAddressPostalCode']+';'+vcf_dict['HomeAddressCountry']
 		a_vcf_card = a_vcf_card + '\nLABEL;TYPE=HOME:'+vcf_dict['HomeAddressPostalCode']+';;'+vcf_dict['HomeAddressStreet']+';'+vcf_dict['HomeAddressCity']+';;'+vcf_dict['HomeAddressPostalCode']+';'+vcf_dict['BusinessAddressCountry']
 		a_address = vcf_dict['Email1DisplayName']
-		a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:a_address.rfind(')')]
+		if a_address.rfind(')') != -1:
+			a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:a_address.rfind(')')]
+		else:
+			a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:]
 		a_vcf_card = a_vcf_card + '\nEND:VCARD\n'
 		return a_vcf_card
 
