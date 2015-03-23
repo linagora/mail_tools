@@ -87,11 +87,16 @@ class VCard:
 		a_vcf_card = a_vcf_card + '\nLABEL;TYPE=WORK:'+vcf_dict['BusinessAddressPostalCode']+';;'+vcf_dict['BusinessAddressStreet']+';'+vcf_dict['BusinessAddressCity']+';;'+vcf_dict['BusinessAddressPostalCode']+';'+vcf_dict['HomeAddressCountry']
 		a_vcf_card = a_vcf_card + '\nADR;TYPE=HOME:'+vcf_dict['HomeAddressPostalCode']+';;'+vcf_dict['HomeAddressStreet']+';'+vcf_dict['HomeAddressCity']+';;'+vcf_dict['HomeAddressPostalCode']+';'+vcf_dict['HomeAddressCountry']
 		a_vcf_card = a_vcf_card + '\nLABEL;TYPE=HOME:'+vcf_dict['HomeAddressPostalCode']+';;'+vcf_dict['HomeAddressStreet']+';'+vcf_dict['HomeAddressCity']+';;'+vcf_dict['HomeAddressPostalCode']+';'+vcf_dict['BusinessAddressCountry']
-		a_address = vcf_dict['Email1DisplayName']
-		if a_address.rfind(')') != -1:
-			a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:a_address.rfind(')')]
-		else:
-			a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+a_address[a_address.rfind('(')+1:]
+		a_addressDisplay = vcf_dict['Email1DisplayName']
+		a_address = vcf_dict['Email1Address']
+
+                resADIS = re.search("([^@|\s]+@[^@]+\.[^@|\s]+)",a_addressDisplay,re.I)
+                res = re.search("([^@|\s]+@[^@]+\.[^@|\s]+)",a_address,re.I)
+                if resADIS :
+                        a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+resADIS.group(1).replace('(', '').replace(')', '').strip()
+                elif res :
+                        a_vcf_card = a_vcf_card + '\nEMAIL;TYPE=PREF,INTERNET:'+res.group(1).replace('(', '').replace(')', '').strip()
+
 		a_vcf_card = a_vcf_card + '\nEND:VCARD\n'
 		return a_vcf_card
 
