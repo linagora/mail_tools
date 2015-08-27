@@ -1,5 +1,5 @@
-Relation des objets generes
----------------------------
+Relationship between generated files
+------------------------------------
 
 * Each appointment in the calendar generates a file named: <profile_name>.csv.item.<item_number>
 * For each item generated, a file with all the item recipients is linked: <profile_name>.csv.itemrecipients.<item_number>
